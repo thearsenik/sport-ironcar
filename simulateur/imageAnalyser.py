@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import time
-import commonVideo as common
+import commonVideo as commonVideo
 import commonTraitement as utils
 from PIL import Image
 from pathlib import Path
@@ -16,11 +16,13 @@ imageDebugDir = "D:/dev/ironcar/output/debug"
 videoOuputFile = "D:/dev/ironcar/output/blenderOutput.mp4"
 previousAngle = 90
 previousDistance = 0
-NB_ITERATIONS = 1000
+previousHauteur = 0
+NB_ITERATIONS = 10000
 
 def detectAngleAndDistance(frame):
     global previousAngle
     global previousDistance
+    global previousHauteur
     
     # Convert to birdeye
     vueDessus = utils.perspective_warp(frame, (1200,900))
@@ -53,27 +55,28 @@ def detectAngleAndDistance(frame):
         contour = max(contours, key=cv2.contourArea)
         rectMax = cv2.minAreaRect(contour)
         print (rectMax)
-        #contour le plus bas
-        #plusBas = utils.getPlusBasContour(contours)
         
         #contour le plus bas dont taille superieure a max/2
         rects = [cv2.minAreaRect(forme) for forme in contours]
         aireMin = rectMax[1][0]*rectMax[1][1]/2
         contoursEntiers = [rect for rect in rects if rect[1][0]*rect[1][1] >= aireMin]
-        plusBasRectangle = utils.getPlusBasContour(contoursEntiers)
+        plusBasRectangle = utils.getPlusHautContour(contoursEntiers)
         rect = plusBasRectangle #cv2.minAreaRect(contour)
         angle = utils.getAngle(rect)
         distance = utils.getDistance(rect)
+        hauteur = utils.getHauteur(rect)
         box = cv2.boxPoints(rect)
         box = np.int0(box)
         cv2.drawContours(vueDessus,[box], 0,(0,0,255),2)
         cv2.putText(vueDessus, str(angle),(vueDessus.shape[1] - 100, vueDessus.shape[0] - 20), font, 1,(0,255,0),2,cv2.LINE_AA)
         previousAngle = angle
         previousDistance = distance
+        previousHauteur = hauteur
     else:
         angle = previousAngle
         distance = float(np.sign(previousDistance))
-    return vueDessus, angle, distance
+        hauteur = previousHauteur
+    return vueDessus, angle, distance, hauteur
 
 
 # grab the current frame
@@ -98,7 +101,7 @@ numImg = 0
 while True:
     if (numImg == 0):
         with open(jsonOutputFile, 'w') as outfile:
-            outfile.write('{\"angle\":90, \"distance\":0}')
+            outfile.write('{\"angle\":90, \"distance\":0, \"hauteur\":1}')
             outfile.close
         
     frame = readImageFromBlender()
@@ -116,17 +119,17 @@ while True:
             break
     
         # get angle from image
-        frame2, angle, distance = detectAngleAndDistance(frame)
+        frame2, angle, distance, hauteur = detectAngleAndDistance(frame)
         
         # from angle, perform move and render new view into png
         numImg = numImg+1
         #write json file with angle value. It s the new blender input...
         with open(jsonOutputFile, 'w') as outfile:
-            outfile.write('{\"angle\":'+str(angle)+', \"distance\":'+str(distance)+'}') 
+            outfile.write('{\"angle\":'+str(angle)+', \"distance\":'+str(distance)+', \"hauteur\":'+str(hauteur)+'}') 
             outfile.close
         
         # For debug, save inputImage with detection and angle
-        frame = common.concat_images(frame, frame2)
+        frame = commonVideo.concat_images(frame, frame2)
         output = Image.fromarray(frame)
         pngOutputFile = imageDebugDir+"\\debugOutput"+str(numImg).zfill(5)+'.png'
         output.save(pngOutputFile)

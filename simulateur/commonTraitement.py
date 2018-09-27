@@ -21,14 +21,18 @@ def getAngle(rect):
 def getDistance(rect):
     #if width < height
     distancePx = (rect[0][0]-600)
-    if rect[0][1] > 300:
-        distance = distancePx/600
-    elif distancePx > 0:
-        distance = 1
-    else:
-        distance = -1
+    
+    distance = distancePx/600
     
     return distance
+
+def getHauteur(rect):
+    #if width < height
+    hauteurPy = (900-rect[0][1])
+    
+    hauteur = hauteurPy/900
+    
+    return hauteur
 
 def perspective_warp(img, 
                      dst_size=(1200,900),
@@ -49,4 +53,8 @@ def perspective_warp(img,
 
 def getPlusBasContour(contours):
     contoursOrdered = sorted(contours, key=lambda rect: rect[0][1], reverse=True)   # sort by top left corner height
+    return  contoursOrdered[0]
+
+def getPlusHautContour(contours):
+    contoursOrdered = sorted(contours, key=lambda rect: rect[0][1], reverse=False)   # sort by top left corner height
     return  contoursOrdered[0]

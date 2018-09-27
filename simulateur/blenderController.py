@@ -27,7 +27,7 @@ def getIndexFromValue(myArray, value):
             break
     return index
 
-def getMove(angle, distance):
+def getMove(angle, distance, hauteur):
     global rotAngles
     global indexAngle
     global rotMax
@@ -36,10 +36,10 @@ def getMove(angle, distance):
     rotAngle = (angle-90)
     
     # Rotation pour recentrer la ligne, plus c'est loin, plus on tourne
-    rotDistance = -90*distance*distance*distance
+    rotDistance = -90*distance
     
     #On ajoute les deux en rajoutant un biais pour augmenter le pouvoir de la distance
-    rotCorrigee = (rotAngle + rotDistance)/10
+    rotCorrigee = (rotAngle + rotDistance)*distance*distance+rotAngle*(1-hauteur)*(1-hauteur)*(1-hauteur)*(1-hauteur)
     
     
     #On determine le vrai angle en le discretisant
@@ -138,7 +138,7 @@ while True:
         numImg +=1
         print('render img '+str(numImg))
         logging.debug('render img '+str(numImg))
-        movX, movY, rotZ = getMove(data["angle"], data["distance"])
+        movX, movY, rotZ = getMove(data["angle"], data["distance"], data["hauteur"])
         moveAndRender(movX, movY, rotZ, renderedImageFile)
         #On attend un peu
         time.sleep(0.1)
