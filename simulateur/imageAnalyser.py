@@ -10,14 +10,14 @@ import json
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 
-imageInputFile = "D:/dev/ironcar/ironcarAgfa/sport-ironcar/output/outputRenderer/road.jpg"
-jsonOutputFile = "D:/dev/ironcar/ironcarAgfa/sport-ironcar/output/outputAnalyser/detection.json"
-imageDebugDir = "D:/dev/ironcar/output/debug"
-videoOuputFile = "D:/dev/ironcar/output/blenderOutput.mp4"
+imageInputFile = "E:/Projets/sport-ironcar/output/tmp/road.jpg"
+jsonOutputFile = "E:/Projets/sport-ironcar/output/tmp/detection.json"
+imageDebugDir = "E:/Projets/sport-ironcar/output/debug"
+videoOuputFile = "E:/Projets/sport-ironcar/output/simulation.mp4"
 previousAngle = 90
 previousDistance = 0
 previousHauteur = 0
-NB_ITERATIONS = 10000
+NB_ITERATIONS = 100
 
 def detectAngleAndDistance(frame):
     global previousAngle
