@@ -83,18 +83,26 @@ def playGame():
             numImg +=1
             
             pointilles = getPointilles(data);
+			
+			# RN compute action to take according to the new input
             action = RN.compute(pointilles)
+			
+			# Get reward
             reward = env.calculateRewardForAction(action)
             
             if reward == env.GAMEOVER:
                 print ('GAME OVER...')
                 logging.debug('GAME OVER...')
-                
+				# stop RN and 
                
+			# Modify RN with gradient according to reward
+			RN.applyReward(reward)
+			
+            # Render  
             print('render img '+str(numImg))
             logging.debug('render img '+str(numImg))
-            # render
             env.getNewState(pathConfig.renderedImageFile)
+			
             #On attend un peu
             time.sleep(0.1)
 
