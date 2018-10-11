@@ -29,33 +29,40 @@ class Rn:
         self.y = y
         self.V = 0
 		self.previousAction = self.DEFAULT_ACTION
+        tf.reset_default_graph()
 		self.sess = tf.Session()
 		self.saver = tf.train.Saver()
-        
-        
-    def reset(self):
-        self.V = 0
-		self.make_network(4, 200)
-		tf.reset_default_graph()
-		self.sess = tf.Session()
-		self.saver = tf.train.Saver()
+        self._q_s_a = tf.placeholder(dtype=tf.float32, shape=(None, len(self.ACTIONS))
+
+        self.make_network()
 		
         
-	def make_network(inputNb, hidden_units):
+	def make_network():
 
-		  inputs = tf.placeholder(dtype=tf.float32, shape=(None, inputNb)    
+        # input: angle, distance, hauteur, actionPrecedente => 4
+		  inputs = tf.placeholder(dtype=tf.float32, shape=(None, 4)
+        # outputs : autant que d'actions possibles (meme actions possibles quel que soit l'etat)
 		  actions = tf.placeholder(dtype=tf.float32, shape=(None, len(self.ACTIONS))
+        # recompense
 		  rewards = tf.placeholder(dtype=tf.float32, shape=(None,1))
 
+        # either use variable scope or attributes ???
 		  with tf.variable_scope('policy'):
-			hidden = tf.layers.dense(inputs, hidden_units, activation=tf.nn.relu, kernel_initializer = tf.contrib.layers.xavier_initializer())
-			logits = tf.layers.dense(hidden, 1, activation=None, kernel_initializer = tf.contrib.layers.xavier_initializer())
+            # une seule couche de 4 neurones (autant que d'entrées), fully connected => dense
+    			hidden = tf.layers.dense(inputs, 4, activation=tf.nn.relu, kernel_initializer = tf.contrib.layers.xavier_initializer())
+			   # couche de sortie,  autant que d'actions possibles sans fonction d'activation
+            logits = tf.layers.dense(hidden, len(self.ACTIONS), activation=None, kernel_initializer = tf.contrib.layers.xavier_initializer())
 
-			out = tf.sigmoid(logits, name="sigmoid")
-			cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(
-				labels=actions, logits=logits, name="cross_entropy")
-			loss = tf.reduce_sum(tf.multiply(rewards, cross_entropy, name="rewards"))
+			   # traitement de la sortie
+            out = tf.sigmoid(logits, name="sigmoid")
+			   cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(
+				    labels=actions, logits=logits, name="cross_entropy")
+			   loss = tf.reduce_sum(tf.multiply(rewards, cross_entropy, name="rewards"))
 
+            # Autre façon de faire:
+            #loss = tf.losses.mean_squared_error(self._q_s_a, logits)
+            #self._optimizer = tf.train.AdamOptimizer().minimize(loss)
+            
 		  # lr=1e-4
 		  lr=1e-3
 		  decay_rate=0.99
@@ -69,6 +76,17 @@ class Rn:
 		  # grads = tf.gradients(loss, [hidden_w, logit_w])
 		  # return pixels, actions, rewards, out, opt, merged, grads
 		  return pixels, actions, rewards, out, opt, merged
+      
+        self._states = tf.placeholder(shape=[None, self._num_states], dtype=tf.float32)
+        self._q_s_a = tf.placeholder(shape=[None, self._num_actions], dtype=tf.float32)
+        # create a couple of fully connected hidden layers
+        fc1 = tf.layers.dense(self._states, 50, activation=tf.nn.relu)
+        fc2 = tf.layers.dense(fc1, 50, activation=tf.nn.relu)
+        self._logits = tf.layers.dense(fc2, self._num_actions)
+        
+        
+        
+self._var_init = tf.global_variables_initializer()
         
 	
 	def start():
@@ -109,5 +127,18 @@ class Rn:
 	
 	def applyReward(reward):
 		self.V = 
-		
+        
+        
+        
+    def predict_one(self, state, sess):
+    return sess.run(self._logits, feed_dict={self._states:
+                                                 state.reshape(1, self.num_states)})
+
+    def predict_batch(self, states, sess):
+        return sess.run(self._logits, feed_dict={self._states: states})
+    
+    def train_batch(self, sess, x_batch, y_batch):
+        sess.run(self._optimizer, feed_dict={self._states: x_batch, self._q_s_a: y_batch})
+    
+    		
         
