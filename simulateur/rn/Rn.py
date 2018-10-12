@@ -1,5 +1,6 @@
 import bpy
 import logging
+import itertools
 import moveController
 import sys
 sys.path.insert(0, '../')
@@ -12,8 +13,10 @@ class Rn:
 
 	# Future rewards discount
     Y = 0.95
-	# Learning ratio
-    ALPHA = 1e-3
+	# Exploration/exploitation ration (Learning ratio)
+	ALPHA = 1e-2
+    #ALPHA_Max = 1
+	#ALPHA_Min = 1e-2 
 	# 5 actions possibles:
 	# ---------------------
 	#   0=tourne a fond a gauche
@@ -24,8 +27,8 @@ class Rn:
 	ACTIONS = [0, 1, 2, 3, 4]
 	DEFAULT_ACTION = round(len(ACTIONS)/2)
 
-    def __init__(self, alpha, y):
-        self.alpha = alpha
+    def __init__(self, y):
+        self.alpha = self.ALPHA_Max
         self.y = y
         self.V = 0
 		self.previousAction = self.DEFAULT_ACTION
@@ -63,10 +66,8 @@ class Rn:
             #loss = tf.losses.mean_squared_error(self._q_s_a, logits)
             #self._optimizer = tf.train.AdamOptimizer().minimize(loss)
             
-		  # lr=1e-4
-		  lr=1e-3
 		  decay_rate=0.99
-		  opt = tf.train.RMSPropOptimizer(ALPHA, decay=decay_rate).minimize(loss)
+		  optimizer = tf.train.RMSPropOptimizer(ALPHA, decay=decay_rate).minimize(loss)
 
 		  tf.summary.histogram("hidden_out", hidden)
 		  tf.summary.histogram("logits_out", logits)
@@ -75,14 +76,15 @@ class Rn:
 
 		  # grads = tf.gradients(loss, [hidden_w, logit_w])
 		  # return pixels, actions, rewards, out, opt, merged, grads
-		  return pixels, actions, rewards, out, opt, merged
+		  return inputs, actions, rewards, out, optimizer, merged
       
-        self._states = tf.placeholder(shape=[None, self._num_states], dtype=tf.float32)
-        self._q_s_a = tf.placeholder(shape=[None, self._num_actions], dtype=tf.float32)
+		# Autre facon de faire:
+        #self._states = tf.placeholder(shape=[None, self._num_states], dtype=tf.float32)
+        #self._q_s_a = tf.placeholder(shape=[None, self._num_actions], dtype=tf.float32)
         # create a couple of fully connected hidden layers
-        fc1 = tf.layers.dense(self._states, 50, activation=tf.nn.relu)
-        fc2 = tf.layers.dense(fc1, 50, activation=tf.nn.relu)
-        self._logits = tf.layers.dense(fc2, self._num_actions)
+        #fc1 = tf.layers.dense(self._states, 50, activation=tf.nn.relu)
+        #fc2 = tf.layers.dense(fc1, 50, activation=tf.nn.relu)
+        #self._logits = tf.layers.dense(fc2, self._num_actions)
         
         
         
@@ -108,6 +110,12 @@ self._var_init = tf.global_variables_initializer()
 		  sess.run(tf.global_variables_initializer())
 		
 		
+	def _choose_action(self, state):
+        if random.random() < self._eps:
+            return random.randint(0, self._model.num_actions - 1)
+        else:
+            return np.argmax(self._model.predict_one(state, self._sess))
+			
     def compute(pointilles):
         
 		# par defaut angle=90, distance=0, hauteur=1, action precedente
@@ -117,7 +125,16 @@ self._var_init = tf.global_variables_initializer()
 			# On ne prend que le dernier (le plus haut)
 			inputs = [self.previousAction, pointilles[last]["angle"], pointilles[last]["distance"], pointilles[last]["hauteur"]];
 		            
+		# normalize inputs histoire de ne pas donner inutilement du poids aux unes plus qu'aux autres
+		for input in inputs:
+			# angle is converted from a range of 0 to 180 to [-1, 1]
+			input["angle"] = (input["angle"]-90)/90
+	
+		# flatten the inputs into a one dimension array
+		inputs = list(itertools.chain.from_iterable(inputs))
+		
         # traitement RN ici !!!
+		
 		result = self.sess.run(out_sym, feed_dict={pix_ph:x.reshape((-1,x.size))})
 		# convert result to action
 		action = result
@@ -131,7 +148,7 @@ self._var_init = tf.global_variables_initializer()
         
         
     def predict_one(self, state, sess):
-    return sess.run(self._logits, feed_dict={self._states:
+		return sess.run(self._logits, feed_dict={self._states:
                                                  state.reshape(1, self.num_states)})
 
     def predict_batch(self, states, sess):
