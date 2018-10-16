@@ -34,6 +34,10 @@ class Rn:
 		self.previousAction = self.DEFAULT_ACTION
         tf.reset_default_graph()
 		self.sess = tf.Session()
+		self.optimizer = None
+		self.inputs = None
+		self.actions = None
+		self.rewards = None
 		self.saver = tf.train.Saver()
         self._q_s_a = tf.placeholder(dtype=tf.float32, shape=(None, len(self.ACTIONS))
 
@@ -44,7 +48,7 @@ class Rn:
 
         # input: angle, distance, hauteur, actionPrecedente => 4
 		  inputs = tf.placeholder(dtype=tf.float32, shape=(None, 4)
-        # outputs : autant que d'actions possibles (meme actions possibles quel que soit l'etat)
+        # outputs : autant que d'actions possibles (on a toujours les meme actions possibles quel que soit l'etat)
 		  actions = tf.placeholder(dtype=tf.float32, shape=(None, len(self.ACTIONS))
         # recompense
 		  rewards = tf.placeholder(dtype=tf.float32, shape=(None,1))
@@ -67,7 +71,7 @@ class Rn:
             #self._optimizer = tf.train.AdamOptimizer().minimize(loss)
             
 		  decay_rate=0.99
-		  optimizer = tf.train.RMSPropOptimizer(ALPHA, decay=decay_rate).minimize(loss)
+		  self.optimizer = tf.train.RMSPropOptimizer(ALPHA, decay=decay_rate).minimize(loss)
 
 		  tf.summary.histogram("hidden_out", hidden)
 		  tf.summary.histogram("logits_out", logits)
@@ -75,8 +79,8 @@ class Rn:
 		  merged = tf.summary.merge_all()
 
 		  # grads = tf.gradients(loss, [hidden_w, logit_w])
-		  # return pixels, actions, rewards, out, opt, merged, grads
-		  return inputs, actions, rewards, out, optimizer, merged
+		  # return pixels, actions, rewards, out, optimizer, merged, grads
+		  return out, merged
       
 		# Autre facon de faire:
         #self._states = tf.placeholder(shape=[None, self._num_states], dtype=tf.float32)
@@ -93,19 +97,17 @@ self._var_init = tf.global_variables_initializer()
 	
 	def start():
 		tf.reset_default_graph()
-		pix_ph, action_ph, reward_ph, out_sym, opt_sym, merged_sym = make_network(pixels_num, hidden_units)
+		out_sym, merged_sym = self.make_network()
 
 		resume = True
 		render = True
 
-		sess = tf.Session()
-		saver = tf.train.Saver()
-		# writer = tf.summary.FileWriter('./log/train', sess.graph)
+		# writer = tf.summary.FileWriter('./log/train', self.sess.graph)
 
-		weight_path = sys.argv[1]
+		weight_path = pathConfig.rnCheckpointsFile
 		if resume:
-		  # saver.restore(sess, tf.train.latest_checkpoint('./log/checkpoints'))
-		  saver.restore(sess, tf.train.latest_checkpoint(weight_path))
+		  # saver.restore(self.sess, tf.train.latest_checkpoint('./log/checkpoints'))
+		  saver.restore(self.sess, tf.train.latest_checkpoint(weight_path))
 		else:
 		  sess.run(tf.global_variables_initializer())
 		
@@ -135,7 +137,7 @@ self._var_init = tf.global_variables_initializer()
 		
         # traitement RN ici !!!
 		
-		result = self.sess.run(out_sym, feed_dict={pix_ph:x.reshape((-1,x.size))})
+		result = self.sess.run(out_sym, feed_dict={self.inputs:x.reshape((-1,x.size))})
 		# convert result to action
 		action = result
         self.previousAction = action
