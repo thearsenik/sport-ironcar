@@ -92,15 +92,10 @@ class Rn:
         
         
         
-self._var_init = tf.global_variables_initializer()
-        
 	
-	def start():
+	def start(resume, render):
 		tf.reset_default_graph()
 		out_sym, merged_sym = self.make_network()
-
-		resume = True
-		render = True
 
 		# writer = tf.summary.FileWriter('./log/train', self.sess.graph)
 
@@ -120,44 +115,48 @@ self._var_init = tf.global_variables_initializer()
 			
     def compute(pointilles):
         
+		##### Formatage des inputs #####
 		# par defaut angle=90, distance=0, hauteur=1, action precedente
 		inputs = [self.previousAction, 90, 0, 1];
         last = len(pointilles)-1
 		if len(pointilles) > 0:
-			# On ne prend que le dernier (le plus haut)
+			# On ne prend que le dernier pointille de la liste (le plus haut sur l'image)
 			inputs = [self.previousAction, pointilles[last]["angle"], pointilles[last]["distance"], pointilles[last]["hauteur"]];
 		            
-		# normalize inputs histoire de ne pas donner inutilement du poids aux unes plus qu'aux autres
+		# normalize inputs histoire de ne pas donner inutilement du poids a des entrees plus qu'a d'autres
 		for input in inputs:
 			# angle is converted from a range of 0 to 180 to [-1, 1]
 			input["angle"] = (input["angle"]-90)/90
 	
 		# flatten the inputs into a one dimension array
 		inputs = list(itertools.chain.from_iterable(inputs))
+		#inputs = inputs.reshape((-1,inputs.size))
 		
-        # traitement RN ici !!!
 		
-		result = self.sess.run(out_sym, feed_dict={self.inputs:x.reshape((-1,x.size))})
+		##### Traitement RN #####
+		#result = self.sess.run(self.actions, feed_dict={self.inputs:inputs})
+		result = _train_batch(self, self.sess, inputs, self.actions)
 		# convert result to action
 		action = result
         self.previousAction = action
 		
         return action
 	
-	def applyReward(reward):
-		self.V = 
+	
+	def _applyReward(reward):
+		#self.V = 
         
         
         
-    def predict_one(self, state, sess):
+    def _predict_one(self, state, sess):
 		return sess.run(self._logits, feed_dict={self._states:
                                                  state.reshape(1, self.num_states)})
 
-    def predict_batch(self, states, sess):
+    def _predict_batch(self, states, sess):
         return sess.run(self._logits, feed_dict={self._states: states})
     
-    def train_batch(self, sess, x_batch, y_batch):
-        sess.run(self._optimizer, feed_dict={self._states: x_batch, self._q_s_a: y_batch})
+    def _train_batch(self, sess, x_batch, y_batch):
+        return sess.run(self._optimizer, feed_dict={self._states: x_batch, self._q_s_a: y_batch})
     
     		
         
