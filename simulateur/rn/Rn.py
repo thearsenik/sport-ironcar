@@ -1,13 +1,15 @@
 import bpy
 import logging
 import itertools
-import moveController
+import RnMemory
 import sys
 sys.path.insert(0, '../')
 import pathConfig
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
 
+logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
+	
+			
 class Rn:
 
 
@@ -21,11 +23,20 @@ class Rn:
 	# ---------------------
 	#   0=tourne a fond a gauche
 	#   1=tourne un peu a gauche
-	#   2=tout droit
+	#   2=tout droit (action par defaut)
 	#   3=tourne a fond a droite
 	#   4=tourne un peu a droite
-	ACTIONS = [0, 1, 2, 3, 4]
-	DEFAULT_ACTION = round(len(ACTIONS)/2)
+	DEFAULT_PREVIOUS_ACTION = [0, 0, 1, 0, 0]
+	#Input :
+	# angle in degrees-90/90,
+	# centered and normalized x (0 when at the center of screen, -1 left, +1 right),
+	# normalized y from the bottom of the screen (from 1 at the top to 0 at the bottom of the screen),
+	# was action 0 previously selected,
+	# was action 1 previously selected,
+	# ...
+	# was action n previously selected
+	DEFAULT_INPUT = [0, 0, 1, 0, 0, 1, 0, 0]
+
 
     def __init__(self, y):
         self.alpha = self.ALPHA_Max
@@ -40,6 +51,7 @@ class Rn:
 		self.rewards = None
 		self.saver = tf.train.Saver()
         self._q_s_a = tf.placeholder(dtype=tf.float32, shape=(None, len(self.ACTIONS))
+		self.memory = RnMemory(50000)
 
         self.make_network()
 		
@@ -113,20 +125,24 @@ class Rn:
         else:
             return np.argmax(self._model.predict_one(state, self._sess))
 			
+	# normalize angle from -1 (0°) to +1 (180°)
+	def _normalizeAngle(angleInDegrees):
+		return (angleInDegrees-90)/90
+		
+		
+	# method used to process a new state provided by the environment
     def compute(pointilles):
         
 		##### Formatage des inputs #####
-		# par defaut angle=90, distance=0, hauteur=1, action precedente
-		inputs = [self.previousAction, 90, 0, 1];
+		# chaque entree va etre de la forme : angle/180, distance au centre, hauteur, wasPreviousActionAction1, wasPreviousActionAction2, ... , wasPreviousActionActionN
+		# par defaut angle=90, distance=0, hauteur=1, action precedente = index nbAction/2
+		inputs = [DEFAULT_INPUT];
+		
         last = len(pointilles)-1
 		if len(pointilles) > 0:
 			# On ne prend que le dernier pointille de la liste (le plus haut sur l'image)
-			inputs = [self.previousAction, pointilles[last]["angle"], pointilles[last]["distance"], pointilles[last]["hauteur"]];
+			inputs = [_normalizeAngle([pointilles[last]["angle"]), pointilles[last]["distance"], pointilles[last]["hauteur"]];
 		            
-		# normalize inputs histoire de ne pas donner inutilement du poids a des entrees plus qu'a d'autres
-		for input in inputs:
-			# angle is converted from a range of 0 to 180 to [-1, 1]
-			input["angle"] = (input["angle"]-90)/90
 	
 		# flatten the inputs into a one dimension array
 		inputs = list(itertools.chain.from_iterable(inputs))
@@ -136,9 +152,13 @@ class Rn:
 		##### Traitement RN #####
 		#result = self.sess.run(self.actions, feed_dict={self.inputs:inputs})
 		result = _train_batch(self, self.sess, inputs, self.actions)
-		# convert result to action
-		action = result
-        self.previousAction = action
+		# Store result as previous action choice
+        self.previousAction = result
+		# convert result to action. Simply return index of the most significant output.
+		action = result.index(max(result))
+		
+		# store result in memory for batch replay
+		self.memory.add_sample((inputs[0], action, reward, next_state))
 		
         return action
 	
