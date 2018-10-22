@@ -6,78 +6,53 @@ import os
 import json
 import time
 import logging
+from variables import *
+import math
+
+# files
+logging.basicConfig(filename=renderingLogFile,level=logging.DEBUG)
+renderedImageFile=renderingImageFile
+detectionFile=imageAnalyserJsonFile
+
+# global var
+previousDirection=0
+
+# constantes
+ROT_MAX = 3
+V_MAX = -0.03
+PI_RAD = 3.1415/180
+INERTIE_DIRECTION = 0.15
 
 
-logging.basicConfig(filename='D:/dev/ironcar/ironcarAgfa/sport-ironcar/output/outputRenderer/render_log.txt',level=logging.DEBUG)
-renderedImageFile='D:/dev/ironcar/ironcarAgfa/sport-ironcar/output/outputRenderer/road.jpg'
-detectionFile='D:/dev/ironcar/ironcarAgfa/sport-ironcar/output/outputAnalyser/detection.json'
-rotAngles = (-3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3)
-rotMax = 3
-indexAngle = round((len(rotAngles)-1)/2)
-piRadian = 3.1415/180
-
-def getIndexFromValue(myArray, value):
-    index = 0
-    for i, valeur in enumerate(myArray):
-        index = i
-        if value <= valeur:
-            if (i != 0):
-                if (valeur-value) > (value - myArray[i-1]):
-                    index = index-1
-            break
-    return index
-
-def getMove(angle, distance, hauteur):
-    global rotAngles
-    global indexAngle
-    global rotMax
+def getMove(direction, vitesse):
+    global previousDirection
+    global INERTIE_DIRECTION
+    global ROT_MAX
+    global V_MAX
     
-    ### Rotation
-    rotAngle = (angle-90)
+    if (direction < -1):
+        direction = -1
+    else:
+        if (direction > 1):
+            direction = 1
     
-    # Rotation pour recentrer la ligne, plus c'est loin, plus on tourne
-    rotDistance = -90*distance
-    
-    #On ajoute les deux en rajoutant un biais pour augmenter le pouvoir de la distance
-    rotCorrigee = (rotAngle + rotDistance)*distance*distance+rotAngle*(1-hauteur)*(1-hauteur)*(1-hauteur)*(1-hauteur)
-    
-    
-    #On determine le vrai angle en le discretisant
-#    rotDiscret = 0
-#    if rotCorrigee > 0 :
-#        rotDiscret = min(rotMax, round(rotCorrigee))
-#    else:
-#        rotDiscret = max(-rotMax, round(rotCorrigee))
-    #On retrouve l'index correspondant dans les valeurs possibles
-    indexVoulu = getIndexFromValue(rotAngles, rotCorrigee)
-    #Comme la variation ne peut etre instantannee on bouge d'un cran vers l'index suivant
-    if indexVoulu-indexAngle > 0:
-        indexAngle +=1
-        if indexAngle == len(rotAngles):
-            indexAngle = len(rotAngles)-1
-    elif indexVoulu-indexAngle < 0:
-        indexAngle -=1
-        if indexAngle == -1:
-            indexAngle = 0
-    #else on ne change rien
+    diffDirection = math.fabs(direction - previousDirection)
+    if (diffDirection < INERTIE_DIRECTION):
+        nextDirection = direction
+    else:
+        if (direction < previousDirection):
+            nextDirection = previousDirection - INERTIE_DIRECTION
+        else:
+            nextDirection = previousDirection + INERTIE_DIRECTION
+        
+    previousDirection = nextDirection
     
     # pi radian
-    message = 'd='+str(distance)+' angle='+str(angle)+' rotAngle='+str(rotAngle)+' rotDistance='+str(rotDistance)+' rotCorrigee='+str(rotCorrigee)+' indexVoulu='+str(indexVoulu) +' indexAngle='+str(indexAngle) + ' angleRot='+str(rotAngles[indexAngle])
-    print(message)
-    logging.debug(message)
-    rotZ = rotAngles[indexAngle]*piRadian
+    rotZ = nextDirection * ROT_MAX *PI_RAD
     
     #### Vitesse de deplacement
-    movx = -0.03
-    movy = -0.03
-    if(angle>100):
-        #actionText = "turn left"
-        movx = -0.02
-        movy = -0.02
-    elif(angle<80):
-        #actionText = "turn right"
-        movx = -0.02
-        movy = -0.02
+    movx = V_MAX * vitesse 
+    movy = V_MAX * vitesse
     
     return movx, movy, rotZ
 
@@ -98,7 +73,7 @@ def readDetectionFile():
     else:
         return None  
    
-def initializeVoiturePosition(location = (18.3535,14.8599,0.348387), rotation = (0,0,4.3*3.1415/180)):
+def initializeVoiturePosition(location = (-11.45727,12.74757,0.348387), rotation = (0,0,300*3.1415/180)):
     voiture = bpy.data.objects['Voiture']
     voiture.location = location
     voiture.rotation_euler = rotation
@@ -123,7 +98,7 @@ def moveAndRender(movx, movy, rotZ, outputFile):
     logging.debug('new angle = '+str(voiture.rotation_euler[2]/3.1415*180))
     
 
-initializeVoiturePosition((18.3535,14.8599,0.348387), (0,0,4.3*3.1415/180))
+initializeVoiturePosition((-11.45727,12.74757,0.348387), (0,0,300*3.1415/180))
 numImg = 0
 while True:
     data = readDetectionFile()
@@ -138,7 +113,7 @@ while True:
         numImg +=1
         print('render img '+str(numImg))
         logging.debug('render img '+str(numImg))
-        movX, movY, rotZ = getMove(data["angle"], data["distance"], data["hauteur"])
+        movX, movY, rotZ = getMove(data["direction"], data["vitesse"])
         moveAndRender(movX, movY, rotZ, renderedImageFile)
         #On attend un peu
         time.sleep(0.1)
