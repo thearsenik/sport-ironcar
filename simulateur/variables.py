@@ -1,0 +1,5 @@
+imageAnalyserJsonFile = "E:/Projets/sport-ironcar/output/tmp/detection.json"
+renderingImageFile = "E:/Projets/sport-ironcar/output/tmp/road.jpg"
+renderingDebugImagesFolder = "E:/Projets/sport-ironcar/output/debug"
+renderingVideoFile = "E:/Projets/sport-ironcar/output/simulation.mp4"
+renderingLogFile = "E:/Projets/sport-ironcar/output/tmp/render_log.txt"
