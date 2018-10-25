@@ -1,7 +1,6 @@
 import bpy
 import logging
 import itertools
-import RnMemory
 import sys
 sys.path.insert(0, '../')
 import pathConfig
@@ -27,15 +26,8 @@ class Rn:
 	#   3=tourne a fond a droite
 	#   4=tourne un peu a droite
 	DEFAULT_PREVIOUS_ACTION = [0, 0, 1, 0, 0]
-	#Input :
-	# angle in degrees-90/90,
-	# centered and normalized x (0 when at the center of screen, -1 left, +1 right),
-	# normalized y from the bottom of the screen (from 1 at the top to 0 at the bottom of the screen),
-	# was action 0 previously selected,
-	# was action 1 previously selected,
-	# ...
-	# was action n previously selected
-	DEFAULT_INPUT = [0, 0, 1, 0, 0, 1, 0, 0]
+	NB_ACTIONS = len(DEFAULT_PREVIOUS_ACTION)
+
 
 
     def __init__(self, y):
@@ -50,18 +42,17 @@ class Rn:
 		self.actions = None
 		self.rewards = None
 		self.saver = tf.train.Saver()
-        self._q_s_a = tf.placeholder(dtype=tf.float32, shape=(None, len(self.ACTIONS))
-		self.memory = RnMemory(50000)
+        self._q_s_a = tf.placeholder(dtype=tf.float32, shape=(None, self.NB_ACTIONS)
 
         self.make_network()
 		
         
-	def make_network():
+	def make_network(self):
 
         # input: angle, distance, hauteur, actionPrecedente => 4
 		  inputs = tf.placeholder(dtype=tf.float32, shape=(None, 4)
         # outputs : autant que d'actions possibles (on a toujours les meme actions possibles quel que soit l'etat)
-		  actions = tf.placeholder(dtype=tf.float32, shape=(None, len(self.ACTIONS))
+		  actions = tf.placeholder(dtype=tf.float32, shape=(None, self.NB_ACTIONS)
         # recompense
 		  rewards = tf.placeholder(dtype=tf.float32, shape=(None,1))
 
@@ -70,7 +61,7 @@ class Rn:
             # une seule couche de 4 neurones (autant que d'entrées), fully connected => dense
     			hidden = tf.layers.dense(inputs, 4, activation=tf.nn.relu, kernel_initializer = tf.contrib.layers.xavier_initializer())
 			   # couche de sortie,  autant que d'actions possibles sans fonction d'activation
-            logits = tf.layers.dense(hidden, len(self.ACTIONS), activation=None, kernel_initializer = tf.contrib.layers.xavier_initializer())
+            logits = tf.layers.dense(hidden, self.NB_ACTIONS, activation=None, kernel_initializer = tf.contrib.layers.xavier_initializer())
 
 			   # traitement de la sortie
             out = tf.sigmoid(logits, name="sigmoid")
@@ -105,7 +96,7 @@ class Rn:
         
         
 	
-	def start(resume, render):
+	def start(self, resume, render):
 		tf.reset_default_graph()
 		out_sym, merged_sym = self.make_network()
 
@@ -118,65 +109,72 @@ class Rn:
 		else:
 		  sess.run(tf.global_variables_initializer())
 		
-		
-	def _choose_action(self, state):
-        if random.random() < self._eps:
-            return random.randint(0, self._model.num_actions - 1)
-        else:
-            return np.argmax(self._model.predict_one(state, self._sess))
-			
-	# normalize angle from -1 (0°) to +1 (180°)
-	def _normalizeAngle(angleInDegrees):
-		return (angleInDegrees-90)/90
-		
+
 		
 	# method used to process a new state provided by the environment
-    def compute(pointilles):
+    def compute(self, inputs):
         
-		##### Formatage des inputs #####
-		# chaque entree va etre de la forme : angle/180, distance au centre, hauteur, wasPreviousActionAction1, wasPreviousActionAction2, ... , wasPreviousActionActionN
-		# par defaut angle=90, distance=0, hauteur=1, action precedente = index nbAction/2
-		inputs = [DEFAULT_INPUT];
-		
-        last = len(pointilles)-1
-		if len(pointilles) > 0:
-			# On ne prend que le dernier pointille de la liste (le plus haut sur l'image)
-			inputs = [_normalizeAngle([pointilles[last]["angle"]), pointilles[last]["distance"], pointilles[last]["hauteur"]];
-		            
-	
-		# flatten the inputs into a one dimension array
-		inputs = list(itertools.chain.from_iterable(inputs))
-		#inputs = inputs.reshape((-1,inputs.size))
-		
-		
-		##### Traitement RN #####
-		#result = self.sess.run(self.actions, feed_dict={self.inputs:inputs})
-		result = _train_batch(self, self.sess, inputs, self.actions)
-		# Store result as previous action choice
-        self.previousAction = result
-		# convert result to action. Simply return index of the most significant output.
-		action = result.index(max(result))
-		
-		# store result in memory for batch replay
-		self.memory.add_sample((inputs[0], action, reward, next_state))
-		
-        return action
-	
-	
-	def _applyReward(reward):
-		#self.V = 
-        
-        
-        
-    def _predict_one(self, state, sess):
-		return sess.run(self._logits, feed_dict={self._states:
-                                                 state.reshape(1, self.num_states)})
+		# inputs a re already well formatted
 
-    def _predict_batch(self, states, sess):
-        return sess.run(self._logits, feed_dict={self._states: states})
+		##### Traitement RN #####
+		# Get the Rn output for the given input
+		# In fact, as we are exploring, either get Rn output either get random...
+		result = self._choose_action(inputs)
+		
+        return result
+	
+	#TODO : traiter model
+	# each item of batch is composed of:
+	#	- the inputs (angle, distance, height, the previous previous action (as array of all possible action))
+	#	- the previous action
+	#	- the reward
+	#	- the next state as (new angle, new distance, new height, the action (as array of all possible action) that lead to this state (previous action)
+	def replay(self, batch):
+		
+        states = np.array([val[0] for val in batch])
+        next_states = np.array([(np.zeros(4)
+                                 if val[3] is None else val[3]) for val in batch])
+        # predict Q(s,a) given the batch of states
+        q_s_a = self._predict_batch(states, self.sess)
+        # predict Q(s',a') - so that we can do gamma * max(Q(s'a')) below
+        q_s_a_d = self._predict_batch(next_states, self.sess)
+        # setup training arrays
+        x = np.zeros((len(batch), 4))
+        y = np.zeros((len(batch), self.NB_ACTIONS))
+        for i, b in enumerate(batch):
+            state, action, reward, next_state = b[0], b[1], b[2], b[3]
+            # get the current q values for all actions in state
+            current_q = q_s_a[i]
+            # update the q value for action
+            if next_state is None:
+                # in this case, the game completed after action, so there is no max Q(s',a')
+                # prediction possible
+                current_q[action] = reward
+            else:
+                current_q[action] = reward + GAMMA * np.amax(q_s_a_d[i])
+            x[i] = state
+            y[i] = current_q
+        self.train_batch(self.sess, x, y)
+		
+		
+        
+        		
+	def _choose_action(self, inputs):
+        if random.random() < self._eps:
+            choosen_index = random.randint(0, self.NB_ACTIONS - 1)
+			actions = [0]*self.NB_ACTIONS
+			actions[choosen_index] = 1
+        else:
+            return self._predict_one(inputs)
+        
+    def _predict_one(self, inputs):
+		return self.sess.run(self._logits, feed_dict={self.inputs: inputs )})
+                                                # feed_dict={self.inputs: inputs.reshape(1, self.num_states)})
+
+    def _predict_batch(self, inputs):
+        return self.sess.run(self._logits, feed_dict={self._states: inputs})
     
-    def _train_batch(self, sess, x_batch, y_batch):
-        return sess.run(self._optimizer, feed_dict={self._states: x_batch, self._q_s_a: y_batch})
-    
-    		
+    def _train_batch(self, x_batch, y_batch):
+        return self.sess.run(self._optimizer, feed_dict={self._states: x_batch, self._q_s_a: y_batch})
+
         
