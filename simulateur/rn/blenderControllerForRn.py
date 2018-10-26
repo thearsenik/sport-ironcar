@@ -181,24 +181,23 @@ reward_store = []
 nb_step_store = []
 
 # On boucle sur les parties
-while True:
-    
+num_episodes = 300
+while numGame < num_episodes:
+
 	numGame += 1
 	print('New game: '+str(numGame))
     logging.debug('Start a new game: '+str(numGame))
+	
 			
     result = playGame()
-    
-    # compute RN here ??? 
-        num_episodes = 300
-        while numGame < num_episodes:
-            if numGame % 10 == 0:
-                print('Episode {} of {}'.format(numGame, num_episodes))
-            gr.run()
-        plt.plot(gr.reward_store)
-        plt.show()
-        plt.close("all")
-        plt.plot(gr.max_x_store)
-        plt.show()
+	
+    logging.debug('end game: '+str(result))
+
+# draw results
+plt.plot(reward_store)
+plt.show()
+plt.close("all")
+plt.plot(nb_step_store)
+plt.show()
     
 
