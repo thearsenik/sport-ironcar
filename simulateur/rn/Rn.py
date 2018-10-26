@@ -1,6 +1,5 @@
 import bpy
 import logging
-import itertools
 import sys
 sys.path.insert(0, '../')
 import pathConfig
@@ -123,7 +122,7 @@ class Rn:
 		
         return result
 	
-	#TODO : traiter model
+
 	# each item of batch is composed of:
 	#	- the inputs (angle, distance, height, the previous previous action (as array of all possible action))
 	#	- the previous action

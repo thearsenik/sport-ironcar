@@ -9,6 +9,7 @@ import logging
 import Environnement
 import RnMemory
 import Rn
+import itertools
 import sys
 sys.path.insert(0, '../')
 import pathConfig
@@ -110,31 +111,33 @@ def playGame():
 			# was action 1 previously selected,
 			# ...
 			# was action n previously selected
-			inputs =DEFAULT_INPUT = [(0, 0, 1, 0, 0, 1, 0, 0)]
+			inputs =DEFAULT_INPUT = [(0, 0, 1, (0, 0, 1, 0, 0))]
 			
 			# On ne prend qu'un des pointilles
 			last = len(pointilles)-1
 			if len(pointilles) > 0:
 				# On ne prend que le dernier pointille de la liste (le plus haut sur l'image)
-				inputs = [(_normalizeAngle([pointilles[last]["angle"]), pointilles[last]["distance"], pointilles[last]["hauteur"]), action_prec];       
+				inputs = [(_normalizeAngle([pointilles[last]["angle"]), pointilles[last]["distance"], pointilles[last]["hauteur"]), previousAction];  
+			elif previousAction != None:
+				inputs = [(0, 0, 1, previousAction)]	
 			# flatten the inputs into a one dimension array
-			inputs = list(itertools.chain.from_iterable(inputs))
+			flatInputs = list(itertools.chain.from_iterable(inputs))
 			#inputs = inputs.reshape((-1,inputs.size))
 			
 			# store result in memory for batch replay and retrain RN
-			if action_prec != None:
+			if previousAction != None:
 				# Add to memory: take the new input as the new state (next_state)
-				memory.add_sample((previous_inputs, action_prec, reward, inputs[0]))
+				memory.add_sample((previous_inputs, previousAction, reward, flatInputs))
 				
 				# Modify RN with gradient according to reward
 				RN.replay(memory.sample(NB_ITEM_IN_TRAINING_BATCH))
 			
 			# RN compute action to take according to the new input
-            action = RN.compute(inputs[0])
+            action = RN.compute(flatInputs)
 			# Store result as previous action choice
 			previousAction = action
 			# Store input as previous input for next iteration
-			previous_inputs = inputs[0];
+			previous_inputs = flatInputs;
 			
 			# Get reward
 			# convert result to action. Simply return index of the most significant output.
