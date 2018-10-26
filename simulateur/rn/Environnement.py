@@ -102,6 +102,10 @@ class Environnement:
     #    logging.debug('new angle = '+str(voiture.rotation_euler[2]/3.1415*180))
     
 
+	# render
+	def getNewState(self, ouputImageFile):
+	
+	
     
     def calculateRewardForNewState(self, action):
         

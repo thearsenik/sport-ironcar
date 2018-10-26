@@ -2,6 +2,7 @@ import numpy as np
 import bpy
 from mathutils import Vector, Matrix
 from pathlib import Path
+import matplotlib.pylab as plt
 import os
 import json
 import time
@@ -79,7 +80,6 @@ def playGame():
     numImg = 0
     
     env.reset()
-     # reset RN here ?
      
 	# Store result as previous action choice
     previousAction = None
@@ -193,6 +193,7 @@ while numGame < num_episodes:
 	
     logging.debug('end game: '+str(result))
 
+	
 # draw results
 plt.plot(reward_store)
 plt.show()
