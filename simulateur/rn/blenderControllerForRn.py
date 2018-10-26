@@ -74,6 +74,8 @@ def playGame():
 	global RN
 	global memory
 	global NB_ITEM_IN_TRAINING_BATCH
+	global reward_store
+	global nb_step_store
     numImg = 0
     
     env.reset()
@@ -147,6 +149,9 @@ def playGame():
             if done:
                 print ('GAME OVER...')
                 logging.debug('GAME OVER...')
+				# store results
+				reward_store.append(env.totalScore)
+                nb_step_store.append(numImg)
 				# Exit game...
 				break
 
@@ -172,6 +177,8 @@ env.start()
 memory = RnMemory(50000)
 RN = Rn()
 numGame = 0
+reward_store = []
+nb_step_store = []
 
 # On boucle sur les parties
 while True:
@@ -183,6 +190,15 @@ while True:
     result = playGame()
     
     # compute RN here ??? 
-    
+        num_episodes = 300
+        while numGame < num_episodes:
+            if numGame % 10 == 0:
+                print('Episode {} of {}'.format(numGame, num_episodes))
+            gr.run()
+        plt.plot(gr.reward_store)
+        plt.show()
+        plt.close("all")
+        plt.plot(gr.max_x_store)
+        plt.show()
     
 
