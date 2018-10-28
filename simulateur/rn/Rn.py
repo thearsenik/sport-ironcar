@@ -1,144 +1,176 @@
 import bpy
 import logging
-import moveController
 import sys
 sys.path.insert(0, '../')
 import pathConfig
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
 
+logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
+	
+			
 class Rn:
 
 
 	# Future rewards discount
     Y = 0.95
-	# Learning ratio
-    ALPHA = 1e-3
+	# Exploration/exploitation ration (Learning ratio)
+	ALPHA = 1e-2
+    #ALPHA_Max = 1
+	#ALPHA_Min = 1e-2 
 	# 5 actions possibles:
 	# ---------------------
 	#   0=tourne a fond a gauche
 	#   1=tourne un peu a gauche
-	#   2=tout droit
+	#   2=tout droit (action par defaut)
 	#   3=tourne a fond a droite
 	#   4=tourne un peu a droite
-	ACTIONS = [0, 1, 2, 3, 4]
-	DEFAULT_ACTION = round(len(ACTIONS)/2)
+	DEFAULT_PREVIOUS_ACTION = [0, 0, 1, 0, 0]
+	NB_ACTIONS = len(DEFAULT_PREVIOUS_ACTION)
 
-    def __init__(self, alpha, y):
-        self.alpha = alpha
+
+
+    def __init__(self, y):
+        self.alpha = self.ALPHA_Max
         self.y = y
         self.V = 0
 		self.previousAction = self.DEFAULT_ACTION
         tf.reset_default_graph()
 		self.sess = tf.Session()
+		self.optimizer = None
+		self.inputs = None
+		self.actions = None
+		self.rewards = None
 		self.saver = tf.train.Saver()
-        self._q_s_a = tf.placeholder(dtype=tf.float32, shape=(None, len(self.ACTIONS))
+        self._q_s_a = tf.placeholder(dtype=tf.float32, shape=(None, self.NB_ACTIONS)
 
         self.make_network()
 		
         
-	def make_network():
+	def make_network(self):
 
         # input: angle, distance, hauteur, actionPrecedente => 4
-		  inputs = tf.placeholder(dtype=tf.float32, shape=(None, 4)
-        # outputs : autant que d'actions possibles (meme actions possibles quel que soit l'etat)
-		  actions = tf.placeholder(dtype=tf.float32, shape=(None, len(self.ACTIONS))
+		inputs = tf.placeholder(dtype=tf.float32, shape=(None, 4)
+        # outputs : autant que d'actions possibles (on a toujours les meme actions possibles quel que soit l'etat)
+		actions = tf.placeholder(dtype=tf.float32, shape=(None, self.NB_ACTIONS)
         # recompense
-		  rewards = tf.placeholder(dtype=tf.float32, shape=(None,1))
+		rewards = tf.placeholder(dtype=tf.float32, shape=(None,1))
 
         # either use variable scope or attributes ???
-		  with tf.variable_scope('policy'):
+		with tf.variable_scope('policy'):
             # une seule couche de 4 neurones (autant que d'entrées), fully connected => dense
-    			hidden = tf.layers.dense(inputs, 4, activation=tf.nn.relu, kernel_initializer = tf.contrib.layers.xavier_initializer())
-			   # couche de sortie,  autant que d'actions possibles sans fonction d'activation
-            logits = tf.layers.dense(hidden, len(self.ACTIONS), activation=None, kernel_initializer = tf.contrib.layers.xavier_initializer())
+    		hidden = tf.layers.dense(inputs, 4, activation=tf.nn.relu, kernel_initializer = tf.contrib.layers.xavier_initializer())
+			# couche de sortie,  autant que d'actions possibles sans fonction d'activation
+            logits = tf.layers.dense(hidden, self.NB_ACTIONS, activation=None, kernel_initializer = tf.contrib.layers.xavier_initializer())
 
-			   # traitement de la sortie
+			# traitement de la sortie
             out = tf.sigmoid(logits, name="sigmoid")
-			   cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(
-				    labels=actions, logits=logits, name="cross_entropy")
-			   loss = tf.reduce_sum(tf.multiply(rewards, cross_entropy, name="rewards"))
+			cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(labels=actions, logits=logits, name="cross_entropy")
+			loss = tf.reduce_sum(tf.multiply(rewards, cross_entropy, name="rewards"))
 
             # Autre façon de faire:
             #loss = tf.losses.mean_squared_error(self._q_s_a, logits)
             #self._optimizer = tf.train.AdamOptimizer().minimize(loss)
-            
-		  # lr=1e-4
-		  lr=1e-3
-		  decay_rate=0.99
-		  opt = tf.train.RMSPropOptimizer(ALPHA, decay=decay_rate).minimize(loss)
+            decay_rate=0.99
+		    self.optimizer = tf.train.RMSPropOptimizer(ALPHA, decay=decay_rate).minimize(loss)
 
-		  tf.summary.histogram("hidden_out", hidden)
-		  tf.summary.histogram("logits_out", logits)
-		  tf.summary.histogram("prob_out", out)
-		  merged = tf.summary.merge_all()
+		    tf.summary.histogram("hidden_out", hidden)
+		    tf.summary.histogram("logits_out", logits)
+		    tf.summary.histogram("prob_out", out)
+		    merged = tf.summary.merge_all()
 
-		  # grads = tf.gradients(loss, [hidden_w, logit_w])
-		  # return pixels, actions, rewards, out, opt, merged, grads
-		  return pixels, actions, rewards, out, opt, merged
+		    # grads = tf.gradients(loss, [hidden_w, logit_w])
+		    # return pixels, actions, rewards, out, optimizer, merged, grads
+		    return out, merged
       
-        self._states = tf.placeholder(shape=[None, self._num_states], dtype=tf.float32)
-        self._q_s_a = tf.placeholder(shape=[None, self._num_actions], dtype=tf.float32)
+		# Autre facon de faire:
+        #self._states = tf.placeholder(shape=[None, self._num_states], dtype=tf.float32)
+        #self._q_s_a = tf.placeholder(shape=[None, self._num_actions], dtype=tf.float32)
         # create a couple of fully connected hidden layers
-        fc1 = tf.layers.dense(self._states, 50, activation=tf.nn.relu)
-        fc2 = tf.layers.dense(fc1, 50, activation=tf.nn.relu)
-        self._logits = tf.layers.dense(fc2, self._num_actions)
+        #fc1 = tf.layers.dense(self._states, 50, activation=tf.nn.relu)
+        #fc2 = tf.layers.dense(fc1, 50, activation=tf.nn.relu)
+        #self._logits = tf.layers.dense(fc2, self._num_actions)
         
-        
-        
-self._var_init = tf.global_variables_initializer()
         
 	
-	def start():
+	def start(self, resume, render):
 		tf.reset_default_graph()
-		pix_ph, action_ph, reward_ph, out_sym, opt_sym, merged_sym = make_network(pixels_num, hidden_units)
+		out_sym, merged_sym = self.make_network()
 
-		resume = True
-		render = True
+		# writer = tf.summary.FileWriter('./log/train', self.sess.graph)
 
-		sess = tf.Session()
-		saver = tf.train.Saver()
-		# writer = tf.summary.FileWriter('./log/train', sess.graph)
-
-		weight_path = sys.argv[1]
+		weight_path = pathConfig.rnCheckpointsFile
 		if resume:
-		  # saver.restore(sess, tf.train.latest_checkpoint('./log/checkpoints'))
-		  saver.restore(sess, tf.train.latest_checkpoint(weight_path))
+		  # saver.restore(self.sess, tf.train.latest_checkpoint('./log/checkpoints'))
+		  saver.restore(self.sess, tf.train.latest_checkpoint(weight_path))
 		else:
 		  sess.run(tf.global_variables_initializer())
 		
-		
-    def compute(pointilles):
-        
-		# par defaut angle=90, distance=0, hauteur=1, action precedente
-		inputs = [self.previousAction, 90, 0, 1];
-        last = len(pointilles)-1
-		if len(pointilles) > 0:
-			# On ne prend que le dernier (le plus haut)
-			inputs = [self.previousAction, pointilles[last]["angle"], pointilles[last]["distance"], pointilles[last]["hauteur"]];
-		            
-        # traitement RN ici !!!
-		result = self.sess.run(out_sym, feed_dict={pix_ph:x.reshape((-1,x.size))})
-		# convert result to action
-		action = result
-        self.previousAction = action
-		
-        return action
-	
-	def applyReward(reward):
-		self.V = 
-        
-        
-        
-    def predict_one(self, state, sess):
-    return sess.run(self._logits, feed_dict={self._states:
-                                                 state.reshape(1, self.num_states)})
 
-    def predict_batch(self, states, sess):
-        return sess.run(self._logits, feed_dict={self._states: states})
+		
+	# method used to process a new state provided by the environment
+    def compute(self, inputs):
+        
+		# inputs a re already well formatted
+
+		##### Traitement RN #####
+		# Get the Rn output for the given input
+		# In fact, as we are exploring, either get Rn output either get random...
+		result = self._choose_action(inputs)
+		
+        return result
+	
+
+
+	# each item of batch is composed of:
+	#	- the inputs (angle, distance, height, the previous previous action (as array of all possible action))
+	#	- the previous action
+	#	- the reward
+	#	- the next state as (new angle, new distance, new height, the action (as array of all possible action) that lead to this state (previous action)
+	def replay(self, batch):
+		
+        states = np.array([val[0] for val in batch])
+        next_states = np.array([(np.zeros(4)
+                                 if val[3] is None else val[3]) for val in batch])
+        # predict Q(s,a) given the batch of states
+        q_s_a = self._predict_batch(states, self.sess)
+        # predict Q(s',a') - so that we can do gamma * max(Q(s'a')) below
+        q_s_a_d = self._predict_batch(next_states, self.sess)
+        # setup training arrays
+        x = np.zeros((len(batch), 4))
+        y = np.zeros((len(batch), self.NB_ACTIONS))
+        for i, b in enumerate(batch):
+            state, action, reward, next_state = b[0], b[1], b[2], b[3]
+            # get the current q values for all actions in state
+            current_q = q_s_a[i]
+            # update the q value for action
+            if next_state is None:
+                # in this case, the game completed after action, so there is no max Q(s',a')
+                # prediction possible
+                current_q[action] = reward
+            else:
+                current_q[action] = reward + GAMMA * np.amax(q_s_a_d[i])
+            x[i] = state
+            y[i] = current_q
+        self.train_batch(self.sess, x, y)
+		
+		
+        
+        		
+	def _choose_action(self, inputs):
+        if random.random() < self._eps:
+            choosen_index = random.randint(0, self.NB_ACTIONS - 1)
+			actions = [0]*self.NB_ACTIONS
+			actions[choosen_index] = 1
+        else:
+            return self._predict_one(inputs)
+        
+    def _predict_one(self, inputs):
+		return self.sess.run(self._logits, feed_dict={self.inputs: inputs )})
+                                                # feed_dict={self.inputs: inputs.reshape(1, self.num_states)})
+
+    def _predict_batch(self, inputs):
+        return self.sess.run(self._logits, feed_dict={self._states: inputs})
     
-    def train_batch(self, sess, x_batch, y_batch):
-        sess.run(self._optimizer, feed_dict={self._states: x_batch, self._q_s_a: y_batch})
-    
-    		
+    def _train_batch(self, x_batch, y_batch):
+        return self.sess.run(self._optimizer, feed_dict={self._states: x_batch, self._q_s_a: y_batch})
         

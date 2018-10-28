@@ -102,6 +102,10 @@ class Environnement:
     #    logging.debug('new angle = '+str(voiture.rotation_euler[2]/3.1415*180))
     
 
+	# render
+	def getNewState(self, ouputImageFile):
+	
+	
     
     def calculateRewardForNewState(self, action):
         
@@ -110,6 +114,7 @@ class Environnement:
        
         #By default no gain
         gain = 0
+		done = False
            
         voiture = bpy.data.objects['Voiture']
         target = self.targets[self.target_index]
@@ -131,11 +136,12 @@ class Environnement:
             # if the target is still not reached, the game is over (-1)
             if self.reward <= 0:
                 gain = self.GAMEOVER
+				done = True
         
         # score de la partie
         self.totalScore = self.totalScore + gain
         
-        return gain
+        return gain, done
 
 #On passe en edit mode
 #bm = bmesh.from_edit_mesh(road.data) 
