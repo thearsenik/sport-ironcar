@@ -3,6 +3,7 @@ import bpy
 from mathutils import Vector, Matrix
 from pathlib import Path
 import os
+import shutil
 import json
 import time
 import logging
@@ -68,7 +69,7 @@ def _normalizeAngle(self, angleInDegrees):
                 
 
 
-def playGame():
+def playGame(numGame):
     global env
     global logging
     global RN
@@ -98,7 +99,7 @@ def playGame():
                 break
             
             numImg +=1
-            
+            imageFile = pathConfig.gamesDir+"\\game"+str(numGame).zfill(5)+"_"+str(numImg).zfill(5)+'.png'
             pointilles = getPointilles(data);
             
             ##### Formatage des inputs #####
@@ -143,7 +144,9 @@ def playGame():
             # Get reward
             # convert result to action. Simply return index of the most significant output.
             actionId = action.index(max(action)) # ou sinon np.argmax
-            reward, done = env.calculateRewardForAction(actionId)
+            # calculate next position, and reward for the choosen action
+            # 'imageFile' is the new render file url
+            reward, done = env.next(actionId, imageFile)
             
             if done:
                 print ('GAME OVER...')
@@ -155,12 +158,8 @@ def playGame():
                 break
 
             
-            # Render  
-            print('render img '+str(numImg))
-            logging.debug('render img '+str(numImg))
-            env.getNewState(pathConfig.renderedImageFile)
-            
             # Copy rendered view to party folder...
+            copyfile(imageFile, pathConfig.renderedImageFile)
             
             
             #On attend un peu
@@ -188,7 +187,7 @@ while numGame < num_episodes:
     logging.debug('Start a new game: '+str(numGame))
     
             
-    result, stop = playGame()
+    result, stop = playGame(numGame)
     
     if stop:
         logging.debug('Abort due to stop command... '+str(result))

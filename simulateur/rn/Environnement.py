@@ -20,25 +20,26 @@ class Environnement:
     RAYON = 1.78
 
 
-    def __init__(self):
+    def __init__(self, outputRenderFile):
         self.targets = []
         self.reward = self.REWARD_FULL
         self.target_index = 0
         self.totalScore = 0
+        self.outputRenderFile = outputRenderFile
         
         
     def reset(self):
-        self.stop()
-        self.start()
+        self._stop()
+        self._start()
         
         
-    def initializeVoiturePosition(self, location = (18.3535,14.8599,0.348387), rotation = (0,0,4.3*3.1415/180)):
+    def _initializeVoiturePosition(self, location = (18.3535,14.8599,0.348387), rotation = (0,0,4.3*3.1415/180)):
         voiture = bpy.data.objects['Voiture']
         voiture.location = location
         voiture.rotation_euler = rotation
     
     
-    def start(self): 
+    def _start(self): 
         
         self.reward = self.REWARD_FULL
         self.totalScore = 0
@@ -67,10 +68,10 @@ class Environnement:
         #for face in road.data.polygons[0::2]:
         #    print (face.center)
         
-        self.initializeVoiturePosition()
+        self._initializeVoiturePosition()
             
     
-    def stop(self):
+    def _stop(self):
         road = bpy.data.objects['roadPartCopy']
         if road is not None:
             #make it active
@@ -79,13 +80,13 @@ class Environnement:
             bpy.ops.object.delete()
         
     
-    def isCloseTo(self, point1, point2):
+    def _isCloseTo(self, point1, point2):
         # distance ^2
         distance2 = (point1[0]-point2[0])**2 + (point1[1]-point2[1])**2 + (point1[2]-point2[2])**2
         return distance2 < self.RAYON**2
     
     
-    def move(movx, movy, rotZ):
+    def _move(self, movx, movy, rotZ):
         global logging
     
         #get object
@@ -101,16 +102,19 @@ class Environnement:
     #    logging.debug('new position = ('+str(voiture.location[0])+','+str(voiture.location[1])+','+str(voiture.location[2])+')')
     #    logging.debug('new angle = '+str(voiture.rotation_euler[2]/3.1415*180))
     
-
-	# render
-	def getNewState(self, ouputImageFile):
-	
-	
     
-    def calculateRewardForNewState(self, action):
+    def _render(outputFile):
+        #render frame
+        bpy.data.scenes["Scene"].render.filepath = outputFile
+        bpy.ops.render.render( write_still=True )
+
+
+	# move, render and calculate reward. Say if the game is over
+    def next(self, action, renderOutputImgFile):
         
+        # move according to action
         movX, movY, rotZ = moveController.getMove(action)
-        self.move(movX, movY, rotZ)
+        self._move(movX, movY, rotZ)
        
         #By default no gain
         gain = 0
@@ -140,6 +144,10 @@ class Environnement:
         
         # score de la partie
         self.totalScore = self.totalScore + gain
+        
+        
+        # Render
+        self._render(renderOutputImgFile)
         
         return gain, done
 
