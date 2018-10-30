@@ -1,5 +1,4 @@
 import numpy as np
-import bpy
 from mathutils import Vector, Matrix
 from pathlib import Path
 import os
@@ -55,12 +54,7 @@ def getPointilles(data):
         pointilles.append(pointille)
         
     return pointilles
-   
-    
-def render(outputFile):
-    #render frame
-    bpy.data.scenes["Scene"].render.filepath = outputFile
-    bpy.ops.render.render( write_still=True )    
+  
 
     
 # normalize angle from -1 (0°) to +1 (180°)
