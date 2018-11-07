@@ -148,7 +148,10 @@ class Environnement:
         
         # Render
         self._render(renderOutputImgFile)
-        
+                        
+                # Copy rendered view to party folder...
+                copyfile(imageFile, pathConfig.renderedImageFile)
+                
         return gain, done
 
 #On passe en edit mode

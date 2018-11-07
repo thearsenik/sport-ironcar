@@ -1,4 +1,3 @@
-import bpy
 import logging
 import sys
 sys.path.insert(0, '../')
