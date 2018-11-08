@@ -4,6 +4,7 @@ import os
 import json
 import sys
 sys.path.insert(0, '../')
+import pathConfig
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 
@@ -30,7 +31,7 @@ def readImageFromBlender():
 def readInputFile():
     
     #Test if file exist
-    jsonFile = Path(pathConfig.detectionFile)
+    jsonFile = Path(pathConfig.gameOutputFile)
     if jsonFile.exists(): 
         detectionData = None     
         with open(pathConfig.detectionFile) as data_file: 

@@ -42,10 +42,10 @@ class Rn:
 		self.saver = tf.train.Saver()
         self._q_s_a = tf.placeholder(dtype=tf.float32, shape=(None, self.NB_ACTIONS)
 
-        self.make_network()
+        self._make_network()
 		
         
-	def make_network(self):
+	def _make_network(self):
 
         # input: angle, distance, hauteur, actionPrecedente => 4
 		inputs = tf.placeholder(dtype=tf.float32, shape=(None, 4)

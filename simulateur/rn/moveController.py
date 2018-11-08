@@ -1,6 +1,7 @@
 import numpy as np
 from mathutils import Vector, Matrix
 import logging
+sys.path.insert(0, '../')
 import pathConfig
 
 logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)

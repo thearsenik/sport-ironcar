@@ -6,3 +6,4 @@ gameOutputFile='D:/dev/ironcar/ironcarAgfa/sport-ironcar/output/outputRenderer/r
 gamesDir='D:/dev/ironcar/ironcarAgfa/sport-ironcar/output/games/'
 analyzerDebugDir='D:/dev/ironcar/output/debug/png'
 videoDebugDir = "D:/dev/ironcar/output/debug/video"
+rnCheckpointsFile = "D:/dev/ironcar/output/debug/rn"

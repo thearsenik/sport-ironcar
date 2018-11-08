@@ -9,12 +9,6 @@ sys.path.insert(0, '../')
 import pathConfig
 
 
-# reload files in blender if they changed
-import importlib
-importlib.reload(pathConfig)
-importlib.reload(Environnement)
-
-
 logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
 
 class RnController:
