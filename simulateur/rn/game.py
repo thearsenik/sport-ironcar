@@ -64,10 +64,10 @@ def playNewGame(numGame):
 
             # calculate next position, and reward for the choosen action
             # 'imageFile' is the new render file url
-            reward, done = env.next(actionRot, imageFile)
+            reward, done = env.next(actionRot)
             
-            # Copy rendered view to output image...
-            copyfile(imageFile, pathConfig.renderedImageFile)
+            # Copy rendered view to game output dir for debug...
+            copyfile(pathConfig.renderedImageFile, imageFile)
             
             if done:
                 print ('GAME OVER...')

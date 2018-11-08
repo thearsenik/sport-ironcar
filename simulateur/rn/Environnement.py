@@ -103,14 +103,19 @@ class Environnement:
     #    logging.debug('new angle = '+str(voiture.rotation_euler[2]/3.1415*180))
     
     
-    def _render(outputFile):
+    def _render(self):
         #render frame
-        bpy.data.scenes["Scene"].render.filepath = outputFile
+        bpy.data.scenes["Scene"].render.filepath = pathConfig.renderedImageFile
         bpy.ops.render.render( write_still=True )
 
+	def _writeStepResult(self, gain, self.totalScore, done):
+        #render frame
+		with open(pathConfig.gameOutputFile, 'w') as outfile:
+		outfile.write('{\"reward\":'+str(gain)+', \"done\":'+done+', \"totalScore\":'+str(totalScore)+'}')
+		outfile.close
 
 	# move, render and calculate reward. Say if the game is over
-    def next(self, action, renderOutputImgFile):
+    def next(self, action):
         
         # move according to action
         movX, movY, rotZ = moveController.getMove(action)
@@ -147,10 +152,11 @@ class Environnement:
         
         
         # Render
-        self._render(renderOutputImgFile)
-                        
-                # Copy rendered view to party folder...
-                copyfile(imageFile, pathConfig.renderedImageFile)
+        self._render()
+        
+				
+		# output result
+		self._writeStepResult(gain, self.totalScore, done)
                 
         return gain, done
 

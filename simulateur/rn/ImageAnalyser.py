@@ -98,7 +98,7 @@ def getDetection(frame, numGame, numImg):
         print("new image done : "+str(numImg))
         time.sleep(0.1)
     
-
+		return pointilles
 
 #make a video from images
 #firstNumImg=1

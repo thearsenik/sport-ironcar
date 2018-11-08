@@ -59,8 +59,8 @@ while numGame < num_episodes:
                 print('No image from game !!!  ABORT...')
                 break;
             else:
-                detection = imageAnalyzer.getDetection(frame, numGame, numStep);
-                pointilles = detection.getPointilles();
+                pointilles = imageAnalyzer.getDetection(frame, numGame, numStep);
+                #pointilles = detection.getPointilles();
                 numStep +=1
                 imageFile = pathConfig.gamesDir+"\\game"+str(numGame).zfill(5)+"_"+str(numStep).zfill(5)+'.png'
                 action = gamePlayer.compute(reward, pointilles)      
