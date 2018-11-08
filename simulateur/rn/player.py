@@ -48,7 +48,7 @@ while numGame < num_episodes:
                 print ('GAME OVER...')
                 logging.debug('GAME OVER...')
                 # store results
-                reward_store.append(env.totalScore)
+                reward_store.append(data["totalScore"])
                 nb_step_store.append(numStep)
                 # Exit game...
                 break
