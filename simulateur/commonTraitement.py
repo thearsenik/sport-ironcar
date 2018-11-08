@@ -71,23 +71,11 @@ def getPlusHautContour(contours):
     contoursOrdered = sorted(contours, key=lambda rect: rect[0][1], reverse=False)   # sort by top left corner height
     return  contoursOrdered[0]
 
-#previousTopLeftCorner = None
-#def getPlusHautContourBuffered(contours):
-#    global previousTopLeftCorner
-#    if previousTopLeftCorner is None:
-#        contour = getPlusHautContour(contours)
-#        previousTopLeftCorner = contour[0]
-#        return contour
-#    else:
-#        print('contours=')
-#        print(contours)
-#        print('fin')
-#        contoursOrdered = sorted(contours, key=lambda rect: math.pow(math.fabs(rect[0][0] - previousTopLeftCorner[0]), 2) + math.pow(math.fabs(rect[0][1] - previousTopLeftCorner[1]), 2), reverse=False) # get the closer top left corner to the previous one
-#        contour = contoursOrdered[0]
-#        previousTopLeftCorner = contour[0]
-#        return contour
+lastContours = None
 def getContoursPlusEloigne(contours):
-    contoursOrdered = sorted(contours, key=lambda rect: math.pow(math.fabs(rect[0][0] - 600), 2) + math.pow(rect[0][1], 2), reverse=False) # get the closer top left corner to the previous one
+    global lastContours
+    contoursOrdered = sorted(contours, key=lambda rect: math.pow(math.fabs(rect[0][0] - 600), 2) + math.pow(rect[0][1]-900, 2), reverse=True) # get the closer top left corner to the previous one
+    lastContours = contours
     return contoursOrdered[0]
 
 
