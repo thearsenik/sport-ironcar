@@ -17,22 +17,22 @@ previousAngle = 90
 previousHauteur = 0
 
 # constantes
-NB_ITERATIONS = 3976
+NB_ITERATIONS = 5000
 
 def detectAngleAndDistance(frame):
     global previousAngle
     global previousHauteur
-    
+
     # Convert to birdeye
     vueDessus = utils.perspective_warp(frame, (1200,900))
-    
+
     # Convert BGR to HSV
     hsv = cv2.cvtColor(vueDessus, cv2.COLOR_BGR2HSV)
 
     # define range of blue color in HSV
     lower_yellow = np.array([0,69,94])
     upper_yellow = np.array([255,255,255])
-    
+
     lower_white = np.array([72,14,180])
     upper_white = np.array([255,44,255])
 
@@ -50,7 +50,7 @@ def detectAngleAndDistance(frame):
     #output = Image.fromarray(thresh)
     #output.save("D:/dev/ironcar/output/thresh.png")
     im2,contours,hierarchy = cv2.findContours(thresh, 1, 2)
-    
+
     # Threshold the HSV image to get only blue colors
     mask2 = cv2.inRange(hsv, lower_white, upper_white)
     noiseless2 = utils.remove_noise(mask2)
@@ -58,14 +58,14 @@ def detectAngleAndDistance(frame):
     #thresh2 = cv2.adaptiveThreshold(thresh2, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY_INV,11,2)
 #    im3,contours2,hierarchy2 = cv2.findContours(thresh2, cv2.RETR_LIST, cv2.CHAIN_APPROX_NONE )
     im3 = cv2.cvtColor(thresh2, cv2.COLOR_GRAY2BGR)
-    
+
     rects = contours
-    if(len(rects)>0):        
+    if(len(rects)>0):
         #contour le plus bas
         rects = [cv2.minAreaRect(forme) for forme in contours]
-        
+
         rects = list(filter(lambda rect: not isBehindWhiteLine(rect, thresh2), rects))
-        
+
     if (len(rects)>0):
         rect = utils.getContoursPlusEloigne(rects)
         angle = utils.getAnglePoints(rect[0], [600, 1277])
@@ -78,13 +78,13 @@ def detectAngleAndDistance(frame):
             angle = 180
         hauteur = 0
         rect = None
-        
-    
+
+
     previousAngle = angle
     previousHauteur = hauteur
-    
+
     direction, vitesse = getMoveInfos(angle, hauteur)
-        
+
     drawContoursEtInfos(vueDessus, rect, direction, vitesse)
     return vueDessus, im3, direction, vitesse
 
@@ -112,7 +112,7 @@ def drawOtherRects(vueDessus, rects, ignoreRect):
             box = cv2.boxPoints(rect)
             box = np.int0(box)
             cv2.drawContours(vueDessus,[box], 0,(255,0,0),1)
-            
+
 
 def getMoveInfos(angle, hauteur):
     hInverse = 1 - hauteur
@@ -139,7 +139,7 @@ def drawContoursEtInfos(vueDessus, rect, direction, vitesse):
 def readImageFromBlender():
     #Test if file exist
     image = Path(renderingImageFile)
-    if image.exists():      
+    if image.exists():
         frame = cv2.imread(renderingImageFile)
         #suppression du fichier d'entree
         try:
@@ -148,7 +148,7 @@ def readImageFromBlender():
             return None
         return frame
     else:
-        return None  
+        return None
 
 
 
@@ -158,13 +158,13 @@ while True:
         with open(imageAnalyserJsonFile, 'w') as outfile:
             outfile.write('{\"direction\":0, \"vitesse\":1}')
             outfile.close
-        
+
     frame = readImageFromBlender()
     if frame is None:
         print('Nothing to read...')
         #On attend un peu
         time.sleep(0.1)
-    else:     
+    else:
         # Pour l instant on limite le traitement a 300 frames
         if numImg > NB_ITERATIONS:
             #write empty file to stop blender
@@ -172,30 +172,30 @@ while True:
                 outfile.write('{\"stop\":true}')
                 outfile.close
             break
-    
+
         # get angle from image
         vueDessus, lignesBlanches, direction, vitesse = detectAngleAndDistance(frame)
-        
+
         # from angle, perform move and render new view into png
         numImg = numImg+1
         #write json file with angle value. It s the new blender input...
         with open(imageAnalyserJsonFile, 'w') as outfile:
-            outfile.write('{\"direction\":'+str(direction)+', \"vitesse\":'+str(vitesse)+'}') 
+            outfile.write('{\"direction\":'+str(direction)+', \"vitesse\":'+str(vitesse)+'}')
             outfile.close
-        
+
         # For debug, save inputImage with detection and angle
         frame = commonVideo.concat_images(lignesBlanches, vueDessus)
         pngOutputFile = renderingDebugImagesFolder+"\\debugOutput"+str(numImg).zfill(5)+'.png'
         cv2.imwrite(pngOutputFile, frame)
-        
+
         k = cv2.waitKey(5) & 0xFF
         if k == 27:
             break
-        
+
         #On attend un peu que blender nous fasse un rendu...
         print("new image done : "+str(numImg))
         time.sleep(0.1)
-    
+
 cv2.destroyAllWindows()
 
 
@@ -209,5 +209,3 @@ imagesExtension='png'
 listImages = [renderingDebugImagesFolder+'/'+imagePrefix+str(numImg).zfill(5)+imagesSuffix+'.'+imagesExtension for numImg in list(range(firstNumImg, lastNumImg+1))]
 print('video module')
 commonVideo.video_from_images(listImages, renderingVideoFile, 24)
-
-

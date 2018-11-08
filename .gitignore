@@ -1,3 +1,9 @@
 output/*
 *.pyc
 simulateur/variables.py
+range-detector.py
+blender/road2.blend
+blender/road.blend1
+blender/road.blend
+simulateur/variables.py
+simulateur/variables.py
