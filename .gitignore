@@ -7,3 +7,5 @@ blender/road.blend1
 blender/road.blend
 simulateur/variables.py
 simulateur/variables.py
+*.pyd
+bin/*

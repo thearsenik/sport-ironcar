@@ -9,15 +9,13 @@ import os
 import json
 from variables import *
 import math
+import subprocess
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 
 # global var
 previousAngle = 90
 previousHauteur = 0
-
-# constantes
-NB_ITERATIONS = 5000
 
 def detectAngleAndDistance(frame):
     global previousAngle
@@ -125,7 +123,10 @@ def getMoveInfos(angle, hauteur):
     else:
         if (direction < -1):
             direction = -1
-    return direction, 1
+    direction = round(direction*-3)
+    speed = round(5-math.fabs(direction)) - 1
+    print('d='+str(direction)+',s='+str(speed))
+    return direction, speed
 
 def drawContoursEtInfos(vueDessus, rect, direction, vitesse):
     if rect is not None:
@@ -151,28 +152,24 @@ def readImageFromBlender():
         return None
 
 
+# launch the game simulator
+subprocess.Popen([gameSimulatorPath])
 
 numImg = 0
 while True:
     if (numImg == 0):
         with open(imageAnalyserJsonFile, 'w') as outfile:
-            outfile.write('{\"direction\":0, \"vitesse\":1}')
+            outfile.write('{\"direction\":"0", \"speed\":"1"}')
             outfile.close
 
     frame = readImageFromBlender()
     if frame is None:
         print('Nothing to read...')
         #On attend un peu
-        time.sleep(0.1)
     else:
-        # Pour l instant on limite le traitement a 300 frames
-        if numImg > NB_ITERATIONS:
-            #write empty file to stop blender
-            with open(imageAnalyserJsonFile, 'w') as outfile:
-                outfile.write('{\"stop\":true}')
-                outfile.close
-            break
-
+        # crop image
+        frame = frame[0:640,214:1066]
+        
         # get angle from image
         vueDessus, lignesBlanches, direction, vitesse = detectAngleAndDistance(frame)
 
@@ -180,13 +177,14 @@ while True:
         numImg = numImg+1
         #write json file with angle value. It s the new blender input...
         with open(imageAnalyserJsonFile, 'w') as outfile:
-            outfile.write('{\"direction\":'+str(direction)+', \"vitesse\":'+str(vitesse)+'}')
+            outfile.write('{\"direction\":\"'+str(direction)+'\", \"speed\":\"'+str(vitesse)+'\"}')
             outfile.close
 
         # For debug, save inputImage with detection and angle
-        frame = commonVideo.concat_images(lignesBlanches, vueDessus)
-        pngOutputFile = renderingDebugImagesFolder+"\\debugOutput"+str(numImg).zfill(5)+'.png'
-        cv2.imwrite(pngOutputFile, frame)
+        #frame = commonVideo.concat_images(frame, vueDessus)
+        #pngOutputFile = renderingDebugImagesFolder+"\\debugOutput"+str(numImg).zfill(5)+'.png'
+        #cv2.imwrite(pngOutputFile, frame)
+        cv2.imshow('vueDessus',vueDessus)
 
         k = cv2.waitKey(5) & 0xFF
         if k == 27:
@@ -194,7 +192,6 @@ while True:
 
         #On attend un peu que blender nous fasse un rendu...
         print("new image done : "+str(numImg))
-        time.sleep(0.1)
 
 cv2.destroyAllWindows()
 
@@ -202,7 +199,7 @@ cv2.destroyAllWindows()
 #make a video from images
 print('Starting video packaging')
 firstNumImg=1
-lastNumImg=NB_ITERATIONS
+lastNumImg=numImg
 imagePrefix='debugOutput'
 imagesSuffix=''
 imagesExtension='png'
