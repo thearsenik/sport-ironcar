@@ -13,16 +13,28 @@ import subprocess
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 
+CONST_ANGLE_CAMERA = 50 # Camera's view horizontal angle is 50° (change it if we use fish eye cam)
+CONST_MARGIN_X = 213
+CONST_MARGIN_Y = 0
+
 # global var
 previousAngle = 90
 previousHauteur = 0
+
+def getCameraOrigin(image):
+    global CONST_ANGLE_CAMERA
+    imageWidth = image.shape[1]
+    originY = (imageWidth / 2) / math.tan(utils.deg2rad(CONST_ANGLE_CAMERA / 2))
+    return imageWidth / 2, originY
 
 def detectAngleAndDistance(frame):
     global previousAngle
     global previousHauteur
 
     # Convert to birdeye
-    vueDessus = utils.perspective_warp(frame, (1200,900))
+    vueDessus = utils.perspective_warp(frame)
+    imgHeight = vueDessus.shape[0]
+    imgWidth = vueDessus.shape[1]
 
     # Convert BGR to HSV
     hsv = cv2.cvtColor(vueDessus, cv2.COLOR_BGR2HSV)
@@ -31,8 +43,8 @@ def detectAngleAndDistance(frame):
     lower_yellow = np.array([0,69,94])
     upper_yellow = np.array([255,255,255])
 
-    lower_white = np.array([72,14,180])
-    upper_white = np.array([255,44,255])
+    lower_white = np.array([80,14,138])
+    upper_white = np.array([100,44,180])
 
 
     # Threshold the HSV image to get only blue colors
@@ -65,9 +77,10 @@ def detectAngleAndDistance(frame):
         rects = list(filter(lambda rect: not isBehindWhiteLine(rect, thresh2), rects))
 
     if (len(rects)>0):
-        rect = utils.getContoursPlusEloigne(rects)
-        angle = utils.getAnglePoints(rect[0], [600, 1277])
-        hauteur = utils.getHauteur(rect) #hauteur en 0 et 1
+        rect = utils.getContoursPlusEloigne(rects, imgWidth, imgHeight)
+        originX, originY = getCameraOrigin(vueDessus)
+        angle = utils.getAnglePoints(rect[0], [originX, originY])
+        hauteur = utils.getHauteur(rect, imgHeight) #hauteur en 0 et 1
         drawOtherRects(vueDessus, rects, rect)
     else:
         if (previousAngle < 90):
@@ -87,17 +100,19 @@ def detectAngleAndDistance(frame):
     return vueDessus, im3, direction, vitesse
 
 def isBehindWhiteLine(rect, whiteLineImg):
+    imageMiddleX = round(whiteLineImg.shape[1] / 2)
+    imageHeight = whiteLineImg.shape[0]
     goalX = int(rect[0][0])
     goalY = int(rect[0][1])
-    vx = goalX - 600
-    vy = goalY - 900
+    vx = goalX - imageMiddleX
+    vy = goalY - imageHeight
     valMax = math.fabs(vx) + math.fabs(vy)
     ratioX = vx / valMax
     ratioY = vy / valMax
     i = 0
     while True:
-        testX = 599 + int((ratioX *i) + 0.001)
-        testY = 899 + int((ratioY *i) + 0.001)
+        testX = imageMiddleX - 1 + int((ratioX *i) + 0.001)
+        testY = imageHeight - 1 + int((ratioY *i) + 0.001)
         if math.fabs(goalX - testX) <= 2 and math.fabs(goalY - testY) <= 2:
             return False
         if whiteLineImg[testY, testX] == 255:
@@ -115,7 +130,7 @@ def drawOtherRects(vueDessus, rects, ignoreRect):
 def getMoveInfos(angle, hauteur):
     hInverse = 1 - hauteur
     if math.fabs(angle -90) > 10:
-        direction = ((angle - 90) / 50) * (1 + hInverse)
+        direction = ((angle - 90) / CONST_ANGLE_CAMERA) * (1 + hInverse)
     else:
         direction = 0
     if (direction > 1):
@@ -168,7 +183,14 @@ while True:
         #On attend un peu
     else:
         # crop image
-        frame = frame[0:640,214:1066]
+        frameWidth = frame.shape[1]
+        frameHeight = frame.shape[0]
+        startX = CONST_MARGIN_X
+        endX = frameWidth - CONST_MARGIN_X
+        startY = CONST_MARGIN_Y
+        endY = frameHeight - CONST_MARGIN_Y
+        frame = frame[startY:endY, startX:endX]
+        print(frame.shape)
         
         # get angle from image
         vueDessus, lignesBlanches, direction, vitesse = detectAngleAndDistance(frame)
@@ -181,17 +203,18 @@ while True:
             outfile.close
 
         # For debug, save inputImage with detection and angle
-        #frame = commonVideo.concat_images(frame, vueDessus)
-        #pngOutputFile = renderingDebugImagesFolder+"\\debugOutput"+str(numImg).zfill(5)+'.png'
-        #cv2.imwrite(pngOutputFile, frame)
-        cv2.imshow('vueDessus',vueDessus)
-
-        k = cv2.waitKey(5) & 0xFF
-        if k == 27:
-            break
+        frame = commonVideo.concat_images(frame, vueDessus, 1)
+        frame = commonVideo.concat_images(frame, lignesBlanches, 1)
+        pngOutputFile = renderingDebugImagesFolder+"\\debugOutput"+str(numImg).zfill(5)+'.png'
+        cv2.imwrite(pngOutputFile, frame)
+        cv2.imshow('vueDessus',lignesBlanches)
 
         #On attend un peu que blender nous fasse un rendu...
         print("new image done : "+str(numImg))
+
+    k = cv2.waitKey(5) & 0xFF
+    if k == 27:
+        break
 
 cv2.destroyAllWindows()
 

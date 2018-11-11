@@ -30,25 +30,19 @@ def rad2deg(x):
 def deg2rad(x):
     return x * math.pi / 180.0
 
-def getDistance(rect):
-    #if width < height
-    distancePx = (rect[0][0]-600)
-
-    distance = distancePx/600
-
+def getDistance(rect, imgWidth):
+    distancePx = rect[0][0]-(imgWidth/2)
+    distance = distancePx/(imgWidth/2)
     return distance
 
-def getHauteur(rect):
-    #if width < height
-    hauteurPy = (900-rect[0][1])
-
-    hauteur = hauteurPy/900
-
+def getHauteur(rect, imgHeight):
+    hauteurPy = imgHeight-rect[0][1]
+    hauteur = hauteurPy/imgHeight
     return hauteur
 
 def perspective_warp(img,
-                     dst_size=(1200,900),
-                     src=np.float32([(0,154),(1200,154),(-1431,900),(1431+1200,900)]),
+                     dst_size=(854,640),
+                     src=np.float32([(0,110),(854,110),(-1018,640),(1872,640)]),
                      dst=np.float32([(0,0), (1, 0), (0,1), (1,1)])):
  #   img_size = np.float32([(img.shape[1],img.shape[0])])
  #   src = src* img_size
@@ -72,8 +66,8 @@ def getPlusHautContour(contours):
     return  contoursOrdered[0]
 
 lastContours = None
-def getContoursPlusEloigne(contours):
+def getContoursPlusEloigne(contours, imgWidth, imgHeight):
     global lastContours
-    contoursOrdered = sorted(contours, key=lambda rect: math.pow(math.fabs(rect[0][0] - 600), 2) + math.pow(rect[0][1]-900, 2), reverse=True) # get the closer top left corner to the previous one
+    contoursOrdered = sorted(contours, key=lambda rect: math.pow(math.fabs(rect[0][0] - (imgWidth / 2)), 2) + math.pow(rect[0][1]-imgHeight, 2), reverse=True) # get the closer top left corner to the previous one
     lastContours = contours
     return contoursOrdered[0]
