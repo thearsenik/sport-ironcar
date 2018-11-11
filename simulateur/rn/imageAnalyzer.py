@@ -87,18 +87,14 @@ def getDetection(frame, numGame, numImg):
         # For debug, save inputImage with detection and angle
         frame = commonVideo.concat_images(frame, frame2)
         output = Image.fromarray(frame)
-        pngOutputFile = pathConfig.imageDebugDir+"/debugOutput"+str(numGame).zfill(5)+'_'str(numImg).zfill(5)+'.png'
+        pngOutputFile = pathConfig.imageDebugDir+"/debugOutput"+str(numGame).zfill(5)+'_'+str(numImg).zfill(5)+'.png'
         output.save(pngOutputFile)
-        
-        k = cv2.waitKey(5) & 0xFF
-        if k == 27:
-            break
         
         #On attend un peu que blender nous fasse un rendu...
         print("new image done : "+str(numImg))
         time.sleep(0.1)
     
-		return pointilles
+        return pointilles
 
 #make a video from images
 #firstNumImg=1

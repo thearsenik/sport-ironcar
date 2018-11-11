@@ -1,6 +1,6 @@
 import bpy
 import logging
-import moveController
+#import moveController
 import sys
 sys.path.insert(0, '../')
 import pathConfig
@@ -10,7 +10,10 @@ from mathutils import Vector, Matrix
 # reload files in blender if they changed
 import importlib
 importlib.reload(pathConfig)
-importlib.reload(moveController)
+#importlib.reload(moveController)
+
+
+logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
 
 
 class Environnement:
@@ -20,12 +23,11 @@ class Environnement:
     RAYON = 1.78
 
 
-    def __init__(self, outputRenderFile):
+    def __init__(self):
         self.targets = []
         self.reward = self.REWARD_FULL
         self.target_index = 0
         self.totalScore = 0
-        self.outputRenderFile = outputRenderFile
         
         
     def reset(self):
@@ -52,18 +54,22 @@ class Environnement:
         bpy.context.scene.objects.active = roadOriginal
         
         # dupplicate
-        bpy.Object.Duplicate(mesh=1, material=1, texture=1, ipo=1)
-        road = bpy.context.active_object
+        road = roadOriginal.copy()
+        road.data = roadOriginal.data.copy()
+        bpy.data.scenes[0].objects.link(road)
         # rename
         road.name = 'roadPartCopy'
-        
+
         # set the object to active to apply modifiers
+        for ob in bpy.context.selected_objects:
+            ob.select = False
         bpy.context.scene.objects.active = road
         bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Array")
         bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Curve")
         
         # targets tous les N intervalles
-        self.targets = road.data.polygons[0::2]
+        # marche pas : self.targets = road.data.polygons[0::2]
+        self.targets = road.data.polygons
 
         #for face in road.data.polygons[0::2]:
         #    print (face.center)
@@ -72,8 +78,9 @@ class Environnement:
             
     
     def _stop(self):
-        road = bpy.data.objects['roadPartCopy']
-        if road is not None:
+        roadItems = [obj for obj in bpy.data.objects if obj.name == 'roadPartCopy']
+        if roadItems:
+            road = roadItems[0]
             #make it active
             road.select = True
             # remove it
@@ -108,27 +115,38 @@ class Environnement:
         bpy.data.scenes["Scene"].render.filepath = pathConfig.renderedImageFile
         bpy.ops.render.render( write_still=True )
 
-	def _writeStepResult(self, gain, self.totalScore, done):
-        #render frame
-		with open(pathConfig.gameOutputFile, 'w') as outfile:
-		outfile.write('{\"reward\":'+str(gain)+', \"done\":'+done+', \"totalScore\":'+str(totalScore)+'}')
-		outfile.close
+    def _writeStepResult(self, gain, totalScore, done):
+        message = '{\"reward\":'+str(gain)+', \"done\":'+str(done)+', \"totalScore\":'+str(totalScore)+'}'
+        nbTry=3
+        while (nbTry > 0):
+            try:
+                with open(pathConfig.gameOutputFile, 'w') as outfile:
+                    outfile.write(message)
+                    outfile.close
+                    break
+            except:
+                nbTry = nbTry-1
+                time.sleep(0.001)
 
-	# move, render and calculate reward. Say if the game is over
-    def next(self, action):
-        
-        # move according to action
-        movX, movY, rotZ = moveController.getMove(action)
-        self._move(movX, movY, rotZ)
+    # move, render and calculate reward. Say if the game is over
+#    def next(self, action):
+#        # move according to action
+#        movX, movY, rotZ = moveController.getMove(action)
+#        self._move(movX, movY, rotZ)
+#        voiturePoint = bpy.data.objects['Voiture'].co
+#
+    def next(self, x, y, z, rotZ):
+
        
         #By default no gain
         gain = 0
-		done = False
+        done = False
            
-        voiture = bpy.data.objects['Voiture']
-        target = self.targets[self.target_index]
+        voiturePoint = [float(x), float(y), float(z)]
         
-        if self.isCloseTo(voiture.co, target):
+        target = self.targets[self.target_index].center
+        
+        if self._isCloseTo(voiturePoint, target):
             # Target is reached !
             # change of target
             self.target_index = self.target_index +1
@@ -145,18 +163,18 @@ class Environnement:
             # if the target is still not reached, the game is over (-1)
             if self.reward <= 0:
                 gain = self.GAMEOVER
-				done = True
+                done = True
         
         # score de la partie
         self.totalScore = self.totalScore + gain
         
         
         # Render
-        self._render()
+        #self._render()
         
-				
-		# output result
-		self._writeStepResult(gain, self.totalScore, done)
+                
+        # output result
+        self._writeStepResult(gain, self.totalScore, done)
                 
         return gain, done
 

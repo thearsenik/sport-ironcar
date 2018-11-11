@@ -1,5 +1,4 @@
 import numpy as np
-from mathutils import Vector, Matrix
 import logging
 import RnMemory
 import Rn
@@ -17,8 +16,8 @@ class RnController:
 
 
     def __init__(self):
-        self.memory = RnMemory(50000)
-        self.RN = Rn()
+        self.memory = RnMemory.RnMemory(50000)
+        self.RN = Rn.Rn()
         self.previousAction = None
         self.previous_inputs = None
 
@@ -53,7 +52,7 @@ class RnController:
             last = len(pointilles)-1
             if len(pointilles) > 0:
                 # On ne prend que le dernier pointille de la liste (le plus haut sur l'image)
-                inputs = [(_normalizeAngle(pointilles[last]["angle"]), pointilles[last]["distance"], pointilles[last]["hauteur"], self.previousAction)];  
+                inputs = [(self._normalizeAngle(pointilles[last]["angle"]), pointilles[last]["distance"], pointilles[last]["hauteur"], self.previousAction)];  
             elif self.previousAction != None:
                 inputs = [(0, 0, 1, self.previousAction)]    
             # flatten the inputs into a one dimension array
@@ -66,7 +65,7 @@ class RnController:
                 self.memory.add_sample((self.previous_inputs, self.previousAction, reward, flatInputs))
                 
                 # Modify RN with gradient according to reward
-                self.RN.replay(self.memory.sample(NB_ITEM_IN_TRAINING_BATCH))
+                self.RN.replay(self.memory.sample(self.NB_ITEM_IN_TRAINING_BATCH))
             
             # RN compute action to take according to the new input
             action = self.RN.compute(flatInputs)
@@ -80,7 +79,7 @@ class RnController:
             actionId = action.index(max(action)) # ou sinon np.argmax
 
 
-    return actionId
+            return actionId
 
     
 

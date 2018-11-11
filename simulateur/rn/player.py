@@ -3,8 +3,9 @@ import os
 import json
 import time
 import logging
-import ImageAnalizer
-import PlayerInputReader as input
+import playerInputReader as input
+import imageAnalyzer
+import RnController
 import itertools
 import sys
 sys.path.insert(0, '../')
@@ -14,8 +15,26 @@ import pathConfig
 logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
 
 
-gamePlayer = RnController()
-imageAnalyzer = ImageAnalyzer()
+def writeCommandFile(action, stop=False):
+    message = None
+    if (stop):
+        message = '{\"stop\":\"true\"}'
+    else:
+        message = '{\"direction\":\"'+str(action)+'\"}'
+    nbTry=3
+    while (nbTry > 0):
+        try:
+            with open(pathConfig.commandFile, 'w') as outfile:
+                outfile.write(message)
+                outfile.close
+                break
+        except:
+            nbTry = nbTry-1
+            time.sleep(0.001)
+            
+            
+
+gamePlayer = RnController.RnController()
 numGame = 0
 reward_store = []
 nb_step_store = []
@@ -30,15 +49,15 @@ while numGame < num_episodes:
     print('New game: '+str(numGame))
     logging.debug('Start a new game: '+str(numGame))
     
-    # Nouvelle partie
+    # Nouvelle partie, on boucle sur les steps...
+    numStep = 0
     while True:
-        numStep = 0
         gamePlayer.startNewGame()
         data = input.readInputFile()
         if (data == None):
-            print('Nothing to read...')
+            print('Nothing to read in player...')
             #On attend un peu
-            time.sleep(0.1)
+            time.sleep(0.02)
         else:
             if ('stop' in data):
                 print("STOP...")
@@ -46,7 +65,7 @@ while numGame < num_episodes:
                 break
             elif ('done' in data):
                 print ('GAME OVER...')
-                logging.debug('GAME OVER...')
+                logging.debug('GAME OVER... en '+str(numStep)+'steps score='+str(data["totalScore"]))
                 # store results
                 reward_store.append(data["totalScore"])
                 nb_step_store.append(numStep)
@@ -62,28 +81,21 @@ while numGame < num_episodes:
                 pointilles = imageAnalyzer.getDetection(frame, numGame, numStep);
                 #pointilles = detection.getPointilles();
                 numStep +=1
-                imageFile = pathConfig.gamesDir+"\\game"+str(numGame).zfill(5)+"_"+str(numStep).zfill(5)+'.png'
-                action = gamePlayer.compute(reward, pointilles)      
+
+                # get RN result and substract to get a value between -2/2
+                action = gamePlayer.compute(reward, pointilles) - 2     
 
                 #On ecrit l'action
-                with open(jsonOutputFile, 'w') as outfile:
-                    outfile.write('{\"rotZ\":\"'+str(action)+'\"}')
-                    outfile.close
-            
-                #On attend un peu
-                time.sleep(0.1)
-    
-    if stop:
-        logging.debug('Abort due to stop command... '+str(result))
-        break
-    else:
-        logging.debug('end game: '+str(result))
+                writeCommandFile(action)
 
     
+    if stop:
+        logging.debug('Abort due to stop command... ')
+        break
+        
+    
 #On ecrit l'action stop pour arreter blender
-with open(jsonOutputFile, 'w') as outfile:
-    outfile.write('{\"stop\":true}')
-    outfile.close
+writeCommandFile(None, True)
     
 # draw results
 #import matplotlib.pylab as plt

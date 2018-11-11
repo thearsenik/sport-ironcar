@@ -6,7 +6,6 @@ import sys
 sys.path.insert(0, '../')
 import pathConfig
 
-font = cv2.FONT_HERSHEY_SIMPLEX
 
 
 # grab the current frame
@@ -14,10 +13,10 @@ def readImageFromBlender():
     
     #Test if file exist
     image = Path(imageInputFile)
-    if image.exists():      
-        frame = cv2.imread(imageInputFile)
-        #suppression du fichier d'entree
-        try:
+    if image.exists():     
+        try:    
+            frame = cv2.imread(imageInputFile)
+            #suppression du fichier d'entree
             os.remove(imageInputFile)
         except:
             return None
@@ -33,15 +32,15 @@ def readInputFile():
     #Test if file exist
     jsonFile = Path(pathConfig.gameOutputFile)
     if jsonFile.exists(): 
-        detectionData = None     
-        with open(pathConfig.detectionFile) as data_file: 
-            detectionData = json.load(data_file)
-        #suppression du fichier d'entree
+        data = None     
         try:
-            os.remove(pathConfig.detectionFile)
+            with open(pathConfig.detectionFile) as data_file: 
+                data = json.load(data_file)
+                #suppression du fichier d'entree
+                os.remove(pathConfig.detectionFile)
         except:
             return None
-        return detectionData
+        return data
     else:
         return None
     

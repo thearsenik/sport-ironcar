@@ -1,6 +1,12 @@
 import logging
 import sys
-sys.path.insert(0, '../')
+import time
+import os
+import json
+from shutil import copyfile
+from pathlib import Path
+sys.path.insert(0, '../simulateur/')
+sys.path.insert(0, '../simulateur/rn/')
 import pathConfig
 import Environnement
 #import bmesh 
@@ -16,58 +22,51 @@ logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
 
 
 
-def readCommandFile():
-    
+def readCarLocationFile():
     #Test if file exist
-    jsonFile = Path(pathConfig.commandFile)
+    jsonFile = Path(pathConfig.carLocation)
     if jsonFile.exists(): 
-        commandData = None     
-        with open(pathConfig.commandFile) as data_file: 
-            commandData = json.load(data_file)
-        #suppression du fichier d'entree
-        try:
-            os.remove(pathConfig.commandFile)
+        data = None   
+        try:        
+            with open(pathConfig.carLocation) as data_file: 
+                data = json.load(data_file)
+            #suppression du fichier d'entree
+            os.remove(pathConfig.carLocation)
         except:
             return None
-        return commandData
+        return data
     else:
         return None
     
-    
-
+            
+            
 def playNewGame(numGame):
     global env
     global logging
     numImg = 0
     
     env.reset()
-
-    stop = false; 
+    stop = False; 
     while True:
-        data = readCommandFile()
+        data = readCarLocationFile()
         if (data == None):
-            print('Nothing to read...')
+            print('Nothing to read in game...')
             #On attend un peu
-            time.sleep(0.1)
+            time.sleep(0.02)
         else:
             if ('stop' in data):
                 print("STOP...")
                 env.stop()
                 stop = True
                 break
-            
+               
+            # Get reward
+            # calculate reward for the new position
+            reward, done = env.next(data['x'], data['y'], data['z'], data['rotZ'])
+                
+            # To debug, copy rendered view to game output directory...
             numImg +=1
             imageFile = pathConfig.gamesDir+"\\game"+str(numGame).zfill(5)+"_"+str(numImg).zfill(5)+'.png'
-            actionRot = data["rotZ"]
-            
-                        
-            # Get reward
-
-            # calculate next position, and reward for the choosen action
-            # 'imageFile' is the new render file url
-            reward, done = env.next(actionRot)
-            
-            # Copy rendered view to game output dir for debug...
             copyfile(pathConfig.renderedImageFile, imageFile)
             
             if done:
@@ -75,10 +74,9 @@ def playNewGame(numGame):
                 logging.debug('GAME OVER...')
                 # Exit game...
                 break
-
-            
+                
             #On attend un peu avant de traiter la commande suivante
-            time.sleep(0.1)
+            time.sleep(0.01)
 
     return env.totalScore, stop
     
@@ -87,6 +85,7 @@ def playNewGame(numGame):
 
 env = Environnement.Environnement()
 numGame = 0
+logging.debug('################# Launching games.... ##################')
 while True:
 
     numGame += 1
@@ -101,5 +100,5 @@ while True:
         break
     else:
         logging.debug('score of the game: '+str(result))
-
+    break
     
