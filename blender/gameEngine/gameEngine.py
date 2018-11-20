@@ -1,10 +1,15 @@
 import bge
+import logging
 import os
 import json
 from pathlib import Path
 import sys
 sys.path.insert(0, '../simulateur')
 import pathConfig
+import time
+
+
+logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
 
 
 def readAndRemoveCommandFile():
@@ -19,10 +24,13 @@ def readAndRemoveCommandFile():
                 commandData = json.load(data_file)
             #suppression du fichier d'entree
             os.remove(pathConfig.commandFile)
+            logging.debug("commands read and removed... ")
         except:
+            logging.warning("Exception while reading/deleting file !!! ")
             return None
         return commandData
     else:
+        #time.sleep(0.007)
         return None
     
 def writeCarLocationFile(car, stop=False):
@@ -45,13 +53,15 @@ def writeCarLocationFile(car, stop=False):
             time.sleep(0.001)
         
         
-
+time1 = time.time() * 1000
 data = readAndRemoveCommandFile()
+
 cont = bge.logic.getCurrentController()
 obj = cont.owner
+PI_RADIAN = 3.1415/180
 
 if data != None:
-        
+     
     if ('stop' in data):
         #Inform that we stopped
         writeCarLocationFile(None, True)
@@ -67,8 +77,8 @@ if data != None:
     if ('speed' in data):
         speed = speedValues[data["speed"]]
 
-    #dict/map of the possible directions values
-    directionValues = {"-3":0.05, "-2": 0.03, "-1": 0.01, "0": 0.0, "1": -0.01, "2": -0.03, "3": -0.05}
+    #dict/map of the possible directions values in Pi radians
+    directionValues = {"-6":-3*PI_RADIAN, "-5": -2.5*PI_RADIAN, "-4": -2*PI_RADIAN,"-3":-1.5*PI_RADIAN, "-2": -1*PI_RADIAN, "-1": -0.5*PI_RADIAN, "0": 0.0, "1": 0.5*PI_RADIAN, "2": 1*PI_RADIAN, "3": 1.5*PI_RADIAN, "4":2*PI_RADIAN, "5":2.5*PI_RADIAN, "6":3*PI_RADIAN}
     direction = directionValues[data["direction"]]
 
     #here we use "minus" before speed value so that users of the simulator don't have to take
@@ -85,7 +95,9 @@ if data != None:
     #print (dir(directionAct))
     
     # render scene
+
     bge.render.makeScreenshot(pathConfig.renderedImageFile)
+    
     
     # Export new position of the car
     # Retrieve the car:
@@ -95,6 +107,8 @@ if data != None:
     car = my_scene.objects['Voiture']
     # Write the file
     writeCarLocationFile(car)
+    time2 = time.time() * 1000
+    logging.debug("total exec "+str(time2-time1))
     
 else:
     #Si rien a faire... on desactive tout...
