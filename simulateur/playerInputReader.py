@@ -2,10 +2,9 @@ from PIL import Image
 from pathlib import Path
 import os
 import json
-import sys
-sys.path.insert(0, '../')
 import pathConfig
 import cv2
+import time
 
 
 
@@ -13,6 +12,7 @@ import cv2
 def readImageFromBlender():
     
     #Test if file exist
+    time1 = time.time() * 1000
     image = Path(pathConfig.renderedImageFile)
     if image.exists():     
         try:    
@@ -20,9 +20,11 @@ def readImageFromBlender():
             #suppression du fichier d'entree
             os.remove(pathConfig.renderedImageFile)
         except:
+            print('trt Exception '+str(time.time() * 1000-time1)+'ms')
             return None
         return frame
     else:
+        #print('trt '+str(time.time() * 1000-time1)+'ms')
         return None  
 
 
