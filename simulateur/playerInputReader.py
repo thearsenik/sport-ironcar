@@ -18,7 +18,7 @@ def readImageFromBlender():
         try:    
             frame = cv2.imread(pathConfig.renderedImageFile)
             #suppression du fichier d'entree
-            os.remove(pathConfig.renderedImageFile)
+            #os.remove(pathConfig.renderedImageFile)
         except:
             print('trt Exception '+str(time.time() * 1000-time1)+'ms')
             return None

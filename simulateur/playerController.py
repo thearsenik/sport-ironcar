@@ -1,18 +1,20 @@
 import time
 import subprocess
+import commonSocket as sock
+from multiprocessing.connection import Listener
 import logging
 import playerInputReader as input
 # change your player
 import Player_Arnaud as Player
 import sys
 from multiprocessing.connection import Client
-import struct
 sys.path.insert(0, '../')
 import pathConfig
 
 
 logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
 
+addressRender = ('127.0.0.1', 6559)
 
 def writeCommandFile(action, stop=False):
     message = None
@@ -36,8 +38,17 @@ def writeCommandFile(action, stop=False):
     #clientSocket.send(struct.pack("L", len(message)))
     clientSocket.send(message)
     clientSocket.close()
+    logging.debug("write command done... ")
             
-            
+    
+def readLocationFile():
+    global locationListener
+    logging.debug("listening for location... ")
+    locationSocket = locationListener.accept()
+    data = sock.read_json(locationSocket)
+    logging.debug("Json location read: "+str(data))
+    
+    return data        
 
 player = Player.Player()
 
@@ -47,12 +58,15 @@ time2 = 0
 cpt = 0
 
 
+locationListener = Listener(addressRender, 'AF_INET')   
 # Nouvelle partie
 writeCommandFile(0)
+readLocationFile()
 # Launch exe
 #subprocess.Popen(['d:/dev/ironcar/ironcarAgfa/sport-ironcar/blender/roadGameEngineWithSocket.exe'])
 # on boucle sur les steps...
 while True:
+    
     frame = input.readImageFromBlender()
     if frame is None:
         if waitStateChanged == False:
@@ -76,4 +90,5 @@ while True:
         print('analyse en '+str(time2-time1)+'ms')
         #On ecrit l'action
         writeCommandFile(action)
+        readLocationFile()
      
