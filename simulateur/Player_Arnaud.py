@@ -14,6 +14,7 @@ class Player:
         self.previousDirection = None
         self.numStep = 0
         self.previousRotZIndex = round((len(self.rotAnglesDegree)-1)/2)
+        self.previousRotAngle = 90
         
     # normalize angle from -1 (0°) to +1 (180°)
     def _normalizeAngle(self, angleInDegrees):
@@ -57,7 +58,10 @@ class Player:
         
         return direction
 
-    
+    def _sign(self, number):
+        if number < 0:
+            return -1
+        return 1
 
 
     def _getMove(self, angle, distance, hauteur):
@@ -66,8 +70,8 @@ class Player:
         rotAngle = (angle-90)
         # Si la rotation passe de 90 à -90 on reste a 90...
         if abs(rotAngle-self.previousRotAngle) > 90:
-            rotAngle = -sign(rotAngle)*90
-        self.previousAngle = rotAngle
+            rotAngle = -self._sign(rotAngle)*90
+        self.previousRotAngle = rotAngle
         
         # Rotation pour recentrer la ligne, plus c'est loin, plus on tourne
         rotDistance = -90*distance
