@@ -1,0 +1,72 @@
+import bge
+import logging
+import sys
+sys.path.insert(0, '../simulateur')
+import pathConfig
+import time
+import gameEngineSocket as socketUtil
+
+
+logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
+
+
+data = socketUtil.readCommandQueue()
+
+cont = bge.logic.getCurrentController()
+obj = cont.owner
+PI_RADIAN = 3.1415/180
+
+if data != None:
+     
+    if ('stop' in data):
+        #Inform that we stopped
+        writeCarLocationFile(None, True)
+        #Stop all ('EndGame')
+        endGame = cont.actuators[2]
+        cont.activate(endGame)
+    
+    time1 = time.time() * 1000     
+    #dict/map of the possible speed values: 5 level of speed including 0 (stop)
+    speedValues = {"0":0.0, "1": 0.01, "2": 0.02, "3": 0.03, "4": 0.04, "5": 0.05}
+    # default speed use when the car is going to constant speed
+    speed = speedValues["2"]
+    if ('speed' in data):
+        speed = speedValues[data["speed"]]
+
+    #dict/map of the possible directions values in Pi radians
+    directionValues = {"-6":-3*PI_RADIAN, "-5": -2.5*PI_RADIAN, "-4": -2*PI_RADIAN,"-3":-1.5*PI_RADIAN, "-2": -1*PI_RADIAN, "-1": -0.5*PI_RADIAN, "0": 0.0, "1": 0.5*PI_RADIAN, "2": 1*PI_RADIAN, "3": 1.5*PI_RADIAN, "4":2*PI_RADIAN, "5":2.5*PI_RADIAN, "6":3*PI_RADIAN}
+    direction = directionValues[data["direction"]]
+
+    #here we use "minus" before speed value so that users of the simulator don't have to take
+    #care of the camera's orientation in its local space
+    speedAct = cont.actuators["forward"]
+    speedAct.dLoc = [-speed, -speed, 0.0] 
+    cont.activate(speedAct)
+
+    directionAct = cont.actuators["direction"]
+    directionAct.dRot = [0.0, 0.0, direction] 
+    cont.activate(directionAct)
+
+    #useful instruction to see properties and function accessible in any object
+    #print (dir(directionAct))
+    
+    # render scene
+    bge.render.makeScreenshot(pathConfig.renderedImageFile)
+    
+    
+    # Export new position of the car
+    # Retrieve the car:
+    # On prend la premiere (et unique) scene
+    my_scene = bge.logic.getSceneList()[0]
+    # Trouver l'objet "voiture" de cette scene
+    car = my_scene.objects['Voiture']
+    # Write the file
+    socketUtil.writeCarLocationFile(car)
+    time2 = time.time() * 1000
+    logging.debug("total render exec "+str(time2-time1))
+    
+else:
+    #Si rien a faire... on desactive tout...
+    for actuator in cont.actuators:
+        cont.deactivate(actuator)
+        
