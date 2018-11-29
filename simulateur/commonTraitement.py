@@ -20,23 +20,23 @@ def getAngle(rect):
 
 def getDistance(rect):
     #if width < height
-    distancePx = (rect[0][0]-600)
+    distancePx = (rect[0][0]-100) #100 = img_Width/2
     
-    distance = distancePx/600
+    distance = distancePx/100 #100 = img_Width/2
     
     return distance
 
 def getHauteur(rect):
     #if width < height
-    hauteurPy = (900-rect[0][1])
+    hauteurPy = (150-rect[0][1])
     
-    hauteur = hauteurPy/900
+    hauteur = hauteurPy/150
     
     return hauteur
 
 def perspective_warp(img, 
                      dst_size=(1200,900),
-                     src=np.float32([(0,154),(1200,154),(-1431,900),(1431+1200,900)]),
+                     src=np.float32([(0,26),(200,26),(-239,150),(239+200,150)]),
                      dst=np.float32([(0,0), (1, 0), (0,1), (1,1)])):
  #   img_size = np.float32([(img.shape[1],img.shape[0])])
  #   src = src* img_size

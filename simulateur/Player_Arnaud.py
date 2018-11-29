@@ -4,7 +4,7 @@ import pathConfig
 import ImageAnalyzer_DottedLine as imageAnalyzer
 
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
+logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 class Player:
 
@@ -36,6 +36,7 @@ class Player:
         
         
     def compute(self, frame):
+        logging.debug("player_Arnaud : compute start. ")
         self.numStep = self.numStep+1
         pointilles = imageAnalyzer.getDetection(frame, 1, self.numStep)
                           
@@ -55,7 +56,7 @@ class Player:
         else:
             direction = 0
 
-        
+        logging.debug("player_Arnaud : compute end. ")
         return direction
 
     def _sign(self, number):
