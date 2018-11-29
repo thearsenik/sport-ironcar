@@ -8,25 +8,27 @@ import queue
 import threading
 from multiprocessing.connection import Listener
 from multiprocessing.connection import Client
-
+import codecs
 
 addressCommands = ('127.0.0.1', 6549)
 addressRender = ('127.0.0.1', 6559)
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
+logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 
 def readCommandFile():
     global commandsListener
     global commandQueue
     while True: 
-        time1 = time.time() * 1000
+        logging.debug("GE : readCommandFile start.")
+        #time1 = time.time() * 1000
         commandSocket = commandsListener.accept()
         commandData = sock.read_json(commandSocket)
-        logging.debug("Json commands read: "+str(commandData))
+        logging.debug("GE : readCommandFile : "+str(commandData))
         commandQueue.put(commandData)
-        time2 = time.time() * 1000
-        logging.debug("we wait for commands for "+str(time2-time1)+" ms")
+        logging.debug("GE : readCommandFile end.")
+        #time2 = time.time() * 1000
+        #logging.debug("we wait for commands for "+str(time2-time1)+" ms")
     #return commandData
 
 def readCommandQueue():
@@ -41,6 +43,7 @@ def readCommandQueue():
  
 def writeCarLocationFile(car, stop=False):
     global addressRender
+    logging.debug("GE : writeCarLocationFile start.")
     message = None
     if (stop):
         message = '{\"stop\":true}'
@@ -52,8 +55,27 @@ def writeCarLocationFile(car, stop=False):
     clientSocket = Client(addressRender, 'AF_INET')
     clientSocket.send(message)
     clientSocket.close() 
+    logging.debug("GE : writeCarLocationFile stop.")
 
-
+def writeCarLocationAndRender(car, render, stop=False):
+    global addressRender
+    logging.debug("GE : writeCarLocationAndRender start.")
+    message = None
+    if (stop):
+        message = '{\"stop\":true}'
+    else:
+        position = car.worldPosition
+        rotationZ = car.worldOrientation.to_euler().z
+        print(render)
+        renderStr = codecs.encode(codecs.decode(render, 'hex'), 'base64').decode()
+        message = '{\"location\":{\"x\":\"'+str(position.x)+'\", \"y\":\"'+str(position.y)+'\", \"z\":\"'+str(position.z)+'\", \"rotZ\":\"'+str(rotationZ)+'\"}, \"render\":\"'+renderStr+'\"}'
+        
+    clientSocket = Client(addressRender, 'AF_INET')
+    clientSocket.send(message)
+    clientSocket.close() 
+    logging.debug("GE : writeCarLocationAndRender stop.")
+    
+    
 logging.debug("Creating socket on : "+str(addressCommands[0])+" "+str(addressCommands[1]))
 commandsListener = Listener(addressCommands, 'AF_INET') 
 #create a queue to get commands

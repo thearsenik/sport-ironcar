@@ -5,11 +5,13 @@ sys.path.insert(0, '../simulateur')
 import pathConfig
 import time
 import gameEngineSocket as socketUtil
+import gameEngineRender as renderer
 
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
+logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 
+logging.debug("GE : cycle start.")
 data = socketUtil.readCommandQueue()
 
 cont = bge.logic.getCurrentController()
@@ -50,9 +52,12 @@ if data != None:
     #useful instruction to see properties and function accessible in any object
     #print (dir(directionAct))
     
-    # render scene
-    bge.render.makeScreenshot(pathConfig.renderedImageFile)
-    
+    # render scene into file
+    #logging.debug("GE : RENDER start.")
+    #bge.render.makeScreenshot(pathConfig.renderedImageFile)
+    #logging.debug("GE : RENDER stop.")
+    # Take a BGR picture in memory....
+    renderImg = renderer.render() 
     
     # Export new position of the car
     # Retrieve the car:
@@ -61,7 +66,7 @@ if data != None:
     # Trouver l'objet "voiture" de cette scene
     car = my_scene.objects['Voiture']
     # Write the file
-    socketUtil.writeCarLocationFile(car)
+    socketUtil.writeCarLocationAndRender(car, renderImg)
     time2 = time.time() * 1000
     logging.debug("total render exec "+str(time2-time1))
     
@@ -70,3 +75,4 @@ else:
     for actuator in cont.actuators:
         cont.deactivate(actuator)
         
+logging.debug("GE : cycle stop.")
