@@ -11,7 +11,7 @@ import gameEngineRender as renderer
 logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 
-logging.debug("GE : cycle start.")
+#logging.debug("GE : cycle start.")
 data = socketUtil.readCommandQueue()
 
 cont = bge.logic.getCurrentController()
@@ -75,4 +75,4 @@ else:
     for actuator in cont.actuators:
         cont.deactivate(actuator)
         
-logging.debug("GE : cycle stop.")
+#logging.debug("GE : cycle stop.")
