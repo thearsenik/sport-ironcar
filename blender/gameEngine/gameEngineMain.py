@@ -8,10 +8,10 @@ import gameEngineSocket as socketUtil
 import gameEngineRender as renderer
 
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename=pathConfig.logFile,level=logging.WARNING, format='%(asctime)s %(message)s')
 
 
-#logging.debug("GE : cycle start.")
+logging.debug("GE : cycle start.")
 data = socketUtil.readCommandQueue()
 
 cont = bge.logic.getCurrentController()
@@ -30,7 +30,7 @@ if data != None:
     time1 = time.time() * 1000     
     #dict/map of the possible speed values: 5 level of speed including 0 (stop)
     speedValues = {"0":0.0, "1": 0.01, "2": 0.02, "3": 0.03, "4": 0.04, "5": 0.05}
-    # default speed use when the car is going to constant speed
+    # default speed... used when the car is going to constant speed and is not provided in commands
     speed = speedValues["2"]
     if ('speed' in data):
         speed = speedValues[data["speed"]]
@@ -59,6 +59,9 @@ if data != None:
     # Take a BGR picture in memory....
     renderImg = renderer.render() 
     
+    time2 = time.time() * 1000
+    logging.debug("total render exec "+str(time2-time1))
+    
     # Export new position of the car
     # Retrieve the car:
     # On prend la premiere (et unique) scene
@@ -67,12 +70,11 @@ if data != None:
     car = my_scene.objects['Voiture']
     # Write the file
     socketUtil.writeCarLocationAndRender(car, renderImg)
-    time2 = time.time() * 1000
-    logging.debug("total render exec "+str(time2-time1))
+    
     
 else:
     #Si rien a faire... on desactive tout...
     for actuator in cont.actuators:
         cont.deactivate(actuator)
         
-#logging.debug("GE : cycle stop.")
+logging.debug("GE : cycle stop.")
