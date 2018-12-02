@@ -39,19 +39,13 @@ def readRenderFile():
     locationSocket = locationListener.accept()
     data = sock.read_json(locationSocket)
     logging.debug("playerController : Json render and location read: ")
-    #logging.debug("playerController : len="+str(len(data["render"])))
     return data  
 
-# decode base64 BGRA to BGR
+# decode base64
 def decodeFrame(frameStr):
     bytes = binascii.a2b_base64(frameStr)
-    image = Image.frombytes("RGBA", (200, 150), bytes)
-    r, g, b, a = image.split()
-    frame = Image.merge("RGB", (b, g, r))
-    #imgByteArr = io.BytesIO()
-    #frame.save(imgByteArr, format='PNG')
-    #imgByteArr = imgByteArr.getvalue()
-    return np.array(frame)
+    image = Image.frombytes("RGB", (200, 150), bytes)
+    return np.array(image)
 
 player = Player.Player()
 
