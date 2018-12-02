@@ -45,8 +45,8 @@ def readRenderFile():
 # decode base64 BGRA to BGR
 def decodeFrame(frameStr):
     bytes = binascii.a2b_base64(frameStr)
-    image = Image.frombytes("RGB", (200, 150), bytes)
-    r, g, b = image.split()
+    image = Image.frombytes("RGBA", (200, 150), bytes)
+    r, g, b, a = image.split()
     frame = Image.merge("RGB", (b, g, r))
     #imgByteArr = io.BytesIO()
     #frame.save(imgByteArr, format='PNG')

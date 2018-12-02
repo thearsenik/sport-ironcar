@@ -14,7 +14,7 @@ previousAngle = 90
 previousDistance = 0
 previousHauteur = 0
 NB_ITERATIONS = 10000
-PRODUCE_DEBUG_IMG = False
+PRODUCE_DEBUG_IMG = True
 
 logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
 
