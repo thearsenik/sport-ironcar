@@ -46,7 +46,7 @@ def _detectAngleAndDistance(frame):
     #output = Image.fromarray(mask)
     #output.save("D:/dev/ironcar/output/mask.png")
     #logging.debug("ImageAnalyzer : remove_noise start. ")
-    noiseless = utils.remove_noise(mask)
+    noiseless = utils.remove_noise(mask,2,2)
     #logging.debug("ImageAnalyzer : remove_noise end. ")
     #output = Image.fromarray(noiseless)
     #output.save("D:/dev/ironcar/output/noiseless.png")
@@ -69,7 +69,9 @@ def _detectAngleAndDistance(frame):
         print (rectMax)
         
         
-        #contour le plus bas dont taille superieure a max/2
+        #contour le plus haut
+        #dont la taille est superieure a max/2 afin de filtrer les bouts de 
+        #pointille qui apparaissent et dont le calcul de l'angle est hazardeux...
         rects = [cv2.minAreaRect(forme) for forme in contours]
         aireMin = rectMax[1][0]*rectMax[1][1]/2
         contoursEntiers = [rect for rect in rects if rect[1][0]*rect[1][1] >= aireMin]

@@ -13,7 +13,7 @@ import codecs
 addressCommands = ('127.0.0.1', 6549)
 addressRender = ('127.0.0.1', 6559)
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename=pathConfig.logFile,level=logging.WARNING, format='%(asctime)s %(message)s')
 
 
 def readCommandFile():
@@ -66,10 +66,11 @@ def writeCarLocationAndRender(car, render, stop=False):
     else:
         position = car.worldPosition
         rotationZ = car.worldOrientation.to_euler().z
-        print(render)
-        renderStr = codecs.encode(codecs.decode(render, 'hex'), 'base64').decode()
+        renderStr = codecs.encode(render, 'base64').decode()
+        renderStr = renderStr.replace('\n', '').replace('\r', '')
+        #print(renderStr)
         message = '{\"location\":{\"x\":\"'+str(position.x)+'\", \"y\":\"'+str(position.y)+'\", \"z\":\"'+str(position.z)+'\", \"rotZ\":\"'+str(rotationZ)+'\"}, \"render\":\"'+renderStr+'\"}'
-        
+        #logging.debug("message "+message)
     clientSocket = Client(addressRender, 'AF_INET')
     clientSocket.send(message)
     clientSocket.close() 

@@ -10,7 +10,10 @@ import sys
 from multiprocessing.connection import Client
 sys.path.insert(0, '../')
 import pathConfig
-
+from PIL import Image
+import binascii
+import io
+import numpy as np
 
 logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
 
@@ -23,33 +26,26 @@ def writeCommandFile(action, stop=False):
         message = '{\"stop\":\"true\"}'
     else:
         message = '{\"direction\":\"'+str(action)+'\"}'
-    #nbTry=3
-    #while (nbTry > 0):
-    #    try:
-    #        with open(pathConfig.commandFile, 'w') as outfile:
-    #            outfile.write(message)
-    #            outfile.close
-    #            print('Write command done...')
-    #            break
-    #    except:
-    #        nbTry = nbTry-1
-    #        print('Write command delayed...')
-    #        time.sleep(0.001)
+
     clientSocket = Client(('127.0.0.1', 6549), 'AF_INET')
-    #clientSocket.send(struct.pack("L", len(message)))
     clientSocket.send(message)
     clientSocket.close()
     logging.debug("playerController : write command done... ")
             
     
-def readLocationFile():
+def readRenderFile():
     global locationListener
-    logging.debug("playerController : listening for location... ")
+    logging.debug("playerController : listening for render and location... ")
     locationSocket = locationListener.accept()
     data = sock.read_json(locationSocket)
-    logging.debug("playerController : Json location read: "+str(data))
-    
-    return data        
+    logging.debug("playerController : Json render and location read: ")
+    return data  
+
+# decode base64
+def decodeFrame(frameStr):
+    bytes = binascii.a2b_base64(frameStr)
+    image = Image.frombytes("RGB", (200, 150), bytes)
+    return np.array(image)
 
 player = Player.Player()
 
@@ -62,36 +58,24 @@ cpt = 0
 locationListener = Listener(addressRender, 'AF_INET')   
 # Nouvelle partie
 writeCommandFile(0)
-readLocationFile()
 # Launch exe
 #subprocess.Popen(['d:/dev/ironcar/ironcarAgfa/sport-ironcar/blender/roadGameEngineWithSocket.exe'])
 # on boucle sur les steps...
 while True:
-    
-    frame = input.readImageFromBlender()
+    data = readRenderFile()
+    frame = decodeFrame(data["render"])
     if frame is None:
         logging.debug("Unexpected error : playerController : No image !!!! ")
-        if waitStateChanged == False:
-            waitStateChanged = True
-            time1 = time.time() * 1000
-            print('No image from game... wait...')
-        cpt = cpt+1
-        time.sleep(0.002)
     else:
-        if waitStateChanged == True:
-            time2 = time.time() * 1000
-            #print('On a attendu pendant '+str(time2-time1)+'ms en '+str(cpt)+' cycles')
-            waitStateChanged = False
-        cpt = 0
         # get result
         #print('New step...')
         #time1 = time.time() * 1000
-        action = player.compute(frame) 
+        action = player.compute(frame)
         #time2 = time.time() * 1000
         #print('direction taken : '+str(action))
         #print('analyse en '+str(time2-time1)+'ms')
         
         #On ecrit l'action
         writeCommandFile(action)
-        readLocationFile()
+        
      

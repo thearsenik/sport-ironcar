@@ -1,10 +1,10 @@
 import numpy as np
 import cv2
 
-def remove_noise(img):
-	kernel = np.ones((5,5),np.uint8)
-	erosion = cv2.erode(img,kernel,iterations = 2)
-	dilation = cv2.dilate(erosion,kernel,iterations = 2)
+def remove_noise(img, kernelWidth, nbIteration):
+	kernel = np.ones((kernelWidth,kernelWidth),np.uint8)
+	erosion = cv2.erode(img,kernel,iterations = nbIteration)
+	dilation = cv2.dilate(erosion,kernel,iterations = nbIteration)
 	return dilation
 
 def grayscale(img):
