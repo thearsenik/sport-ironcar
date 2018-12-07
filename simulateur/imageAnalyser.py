@@ -10,6 +10,8 @@ import json
 from variables import *
 import math
 import subprocess
+import time
+import zmq
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 
@@ -20,6 +22,8 @@ CONST_MARGIN_Y = 0
 # global var
 previousAngle = 90
 previousHauteur = 0
+lastContours = None
+rect = None
 
 def getCameraOrigin(image):
     global CONST_ANGLE_CAMERA
@@ -30,6 +34,8 @@ def getCameraOrigin(image):
 def detectAngleAndDistance(frame):
     global previousAngle
     global previousHauteur
+    global lastContours
+    global rect
 
     # Convert to birdeye
     vueDessus = utils.perspective_warp(frame)
@@ -73,7 +79,6 @@ def detectAngleAndDistance(frame):
     if(len(rects)>0):
         #contour le plus bas
         rects = [cv2.minAreaRect(forme) for forme in contours]
-
         rects = list(filter(lambda rect: not isBehindWhiteLine(rect, thresh2), rects))
 
     if (len(rects)>0):
@@ -83,6 +88,7 @@ def detectAngleAndDistance(frame):
         hauteur = utils.getHauteur(rect, imgHeight) #hauteur en 0 et 1
         drawOtherRects(vueDessus, rects, rect)
     else:
+        print(rect)
         if (previousAngle < 90):
             angle = 0
         else :
@@ -129,7 +135,7 @@ def drawOtherRects(vueDessus, rects, ignoreRect):
 
 def getMoveInfos(angle, hauteur):
     hInverse = 1 - hauteur
-    if math.fabs(angle -90) > 10:
+    if math.fabs(angle -90) > 15:
         direction = ((angle - 90) / CONST_ANGLE_CAMERA) * (1 + hInverse)
     else:
         direction = 0
@@ -139,7 +145,7 @@ def getMoveInfos(angle, hauteur):
         if (direction < -1):
             direction = -1
     direction = round(direction*-3)
-    speed = round(5-math.fabs(direction)) - 1
+    speed =max(round(3-math.fabs(direction)), 1)
     print('d='+str(direction)+',s='+str(speed))
     return direction, speed
 
@@ -170,6 +176,7 @@ def readImageFromBlender():
 # launch the game simulator
 subprocess.Popen([gameSimulatorPath])
 
+previousTime = None
 numImg = 0
 while True:
     if (numImg == 0):
@@ -182,6 +189,9 @@ while True:
         print('Nothing to read...')
         #On attend un peu
     else:
+        if previousTime != None:
+            print('time taken: '+ str((time.time() - previousTime) * 1000))
+        previousTime = time.time()
         # crop image
         frameWidth = frame.shape[1]
         frameHeight = frame.shape[0]
@@ -207,10 +217,10 @@ while True:
         frame = commonVideo.concat_images(frame, lignesBlanches, 1)
         pngOutputFile = renderingDebugImagesFolder+"\\debugOutput"+str(numImg).zfill(5)+'.png'
         cv2.imwrite(pngOutputFile, frame)
-        cv2.imshow('vueDessus',lignesBlanches)
+        cv2.imshow('vueDessus',vueDessus)
 
         #On attend un peu que blender nous fasse un rendu...
-        print("new image done : "+str(numImg))
+        print("new image done : "+str(numImg)+'in ' + str((time.time() - previousTime) * 1000) + 'ms')
 
     k = cv2.waitKey(5) & 0xFF
     if k == 27:

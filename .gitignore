@@ -9,3 +9,4 @@ simulateur/variables.py
 simulateur/variables.py
 *.pyd
 bin/*
+*.blend1

@@ -65,9 +65,10 @@ def getPlusHautContour(contours):
     contoursOrdered = sorted(contours, key=lambda rect: rect[0][1], reverse=False)   # sort by top left corner height
     return  contoursOrdered[0]
 
-lastContours = None
 def getContoursPlusEloigne(contours, imgWidth, imgHeight):
-    global lastContours
     contoursOrdered = sorted(contours, key=lambda rect: math.pow(math.fabs(rect[0][0] - (imgWidth / 2)), 2) + math.pow(rect[0][1]-imgHeight, 2), reverse=True) # get the closer top left corner to the previous one
-    lastContours = contours
+    return contoursOrdered[0]
+
+def getContoursPlusProche(contours, originX, originY):
+    contoursOrdered = sorted(contours, key=lambda rect: math.pow(math.fabs(rect[0][0] - originX), 2) + math.pow(rect[0][1] - originY, 2), reverse=False) # get the closer top left corner to the previous one
     return contoursOrdered[0]
