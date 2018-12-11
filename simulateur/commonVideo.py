@@ -3,6 +3,7 @@ import cv2
 
 
 def concat_images(frame1, frame2, axis=0):
+    print("concatenate img1="+str(frame1.shape)+" img2="+str(frame2.shape))
     frameMerge = np.concatenate((frame1, frame2), axis=0)
     return frameMerge
 
