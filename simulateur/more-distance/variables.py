@@ -1,0 +1,6 @@
+imageAnalyserJsonFile = "G:/output/tmp/detection.json"
+renderingImageFile = "G:/output/tmp/road.png"
+renderingDebugImagesFolder = "G:/output/debug"
+renderingVideoFile = "G:/output/simulation.mp4"
+renderingLogFile = "G:/output/tmp/render_log.txt"
+gameSimulatorPath = "E:/Projets/sport-ironcar/bin/road3.0.blend.exe"
