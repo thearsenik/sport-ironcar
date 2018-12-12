@@ -23,7 +23,7 @@ def getIndexFromValue(myArray, value):
             break
     return index
 
-def getMove(action):
+def getMove(pointilles):
     global rotAngles
     global indexAngle
     global rotMax

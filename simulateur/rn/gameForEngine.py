@@ -46,6 +46,7 @@ def playNewGame(numGame):
     numImg = 0
     
     env.reset()
+
     stop = False; 
     while True:
         data = readCarLocationFile()

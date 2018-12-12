@@ -5,11 +5,14 @@ import pathConfig
 import Environnement
 #import bmesh 
 from mathutils import Vector, Matrix
+import moveController
+
 
 # reload files in blender if they changed
 import importlib
 importlib.reload(pathConfig)
 importlib.reload(Environnement)
+importlib.reload(moveController)
 
 
 logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
@@ -42,7 +45,7 @@ def playNewGame(numGame):
     
     env.reset()
 
-    stop = false; 
+    stop = false 
     while True:
         data = readCommandFile()
         if (data == None):
@@ -60,6 +63,8 @@ def playNewGame(numGame):
             imageFile = pathConfig.gamesDir+"\\game"+str(numGame).zfill(5)+"_"+str(numImg).zfill(5)+'.png'
             actionRot = data["rotZ"]
             
+            # get Car move in blender env according to the command
+            moveController.getMove(actionRot)
                         
             # Get reward
 

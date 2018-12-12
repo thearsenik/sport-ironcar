@@ -35,10 +35,10 @@ def readInputFile():
     if jsonFile.exists(): 
         data = None     
         try:
-            with open(pathConfig.detectionFile) as data_file: 
+            with open(pathConfig.gameOutputFile) as data_file: 
                 data = json.load(data_file)
                 #suppression du fichier d'entree
-                os.remove(pathConfig.detectionFile)
+                os.remove(pathConfig.gameOutputFile)
         except:
             return None
         return data

@@ -114,7 +114,7 @@ class Rn:
     # method used to process a new state provided by the environment
     def compute(self, inputs):
         
-        # inputs a re already well formatted
+        # inputs are already well formatted
 
         ##### Traitement RN #####
         # Get the Rn output for the given input
@@ -124,7 +124,7 @@ class Rn:
         return result
     
 
-
+    # Replay a batch to train the nn.
     # each item of batch is composed of:
     #    - the inputs (angle, distance, height, the previous previous action (as array of all possible action))
     #    - the previous action
