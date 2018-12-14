@@ -2,9 +2,9 @@ import numpy as np
 from mathutils import Vector, Matrix
 import logging
 sys.path.insert(0, '../')
-import pathConfig
+import config
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
+logging.basicConfig(filename=config.logFile,level=logging.DEBUG)
 
 
 rotAngles = (-3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3)

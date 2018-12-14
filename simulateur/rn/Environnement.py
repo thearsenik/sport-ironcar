@@ -3,17 +3,17 @@ import logging
 #import moveController
 import sys
 sys.path.insert(0, '../')
-import pathConfig
+import config
 #import bmesh 
 from mathutils import Vector, Matrix
 
 # reload files in blender if they changed
 import importlib
-importlib.reload(pathConfig)
+importlib.reload(config)
 #importlib.reload(moveController)
 
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
+logging.basicConfig(filename=config.logFile,level=logging.DEBUG)
 
 
 class Environnement:
@@ -115,7 +115,7 @@ class Environnement:
     
     def _render(self):
         #render frame
-        bpy.data.scenes["Scene"].render.filepath = pathConfig.renderedImageFile
+        bpy.data.scenes["Scene"].render.filepath = config.renderedImageFile
         bpy.ops.render.render( write_still=True )
 
     def _writeStepResult(self, gain, totalScore, done):
@@ -123,7 +123,7 @@ class Environnement:
         nbTry=3
         while (nbTry > 0):
             try:
-                with open(pathConfig.gameOutputFile, 'w') as outfile:
+                with open(config.gameOutputFile, 'w') as outfile:
                     outfile.write(message)
                     outfile.close
                     break
