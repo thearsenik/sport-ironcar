@@ -9,7 +9,7 @@ import sys
 sys.path.insert(0, '../')
 import commonVideo as commonVideo
 import commonTraitement as utils
-import pathConfig
+import config
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 
@@ -87,7 +87,7 @@ def getDetection(frame, numGame, numImg):
         # For debug, save inputImage with detection and angle
         frame = commonVideo.concat_images(frame, frame2)
         output = Image.fromarray(frame)
-        pngOutputFile = pathConfig.imageDebugDir+"/debugOutput"+str(numGame).zfill(5)+'_'+str(numImg).zfill(5)+'.png'
+        pngOutputFile = config.imageDebugDir+"/debugOutput"+str(numGame).zfill(5)+'_'+str(numImg).zfill(5)+'.png'
         output.save(pngOutputFile)
         
         #On attend un peu que blender nous fasse un rendu...
@@ -103,6 +103,6 @@ def getDetection(frame, numGame, numImg):
 #imagesSuffix=''
 #imagesExtension='png'
 #listImages = [imageDebugDir+'/'+imagePrefix+str(numImg).zfill(5)+imagesSuffix+'.'+imagesExtension for numImg in list(range(firstNumImg, lastNumImg+1))]
-#commonVideo.video_from_images(listImages, pathConfig.videoDebugDir, 24)
+#commonVideo.video_from_images(listImages, config.videoDebugDir, 24)
 
 

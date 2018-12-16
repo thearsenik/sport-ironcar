@@ -1,13 +1,13 @@
 import logging
 import sys
 sys.path.insert(0, '../')
-import pathConfig
+import config
 import tensorflow as tf
 import numpy as np
 import random
 
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
+logging.basicConfig(filename=config.logFile,level=logging.DEBUG)
     
             
 class Rn:
@@ -102,7 +102,7 @@ class Rn:
 
         # writer = tf.summary.FileWriter('./log/train', self.sess.graph)
 
-        weight_path = pathConfig.rnCheckpointsFile
+        weight_path = config.rnCheckpointsFile
         if resume:
           # saver.restore(self.sess, tf.train.latest_checkpoint('./log/checkpoints'))
           self.saver.restore(self.sess, tf.train.latest_checkpoint(weight_path))
@@ -114,7 +114,7 @@ class Rn:
     # method used to process a new state provided by the environment
     def compute(self, inputs):
         
-        # inputs a re already well formatted
+        # inputs are already well formatted
 
         ##### Traitement RN #####
         # Get the Rn output for the given input
@@ -124,7 +124,7 @@ class Rn:
         return result
     
 
-
+    # Replay a batch to train the nn.
     # each item of batch is composed of:
     #    - the inputs (angle, distance, height, the previous previous action (as array of all possible action))
     #    - the previous action

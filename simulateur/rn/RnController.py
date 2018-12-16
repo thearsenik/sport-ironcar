@@ -5,10 +5,10 @@ import Rn
 import itertools
 import sys
 sys.path.insert(0, '../')
-import pathConfig
+import config
 
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
+logging.basicConfig(filename=config.logFile,level=logging.DEBUG)
 
 class RnController:
 

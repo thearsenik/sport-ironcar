@@ -1,32 +1,35 @@
 import logging
 import sys
 sys.path.insert(0, '../')
-import pathConfig
+import config
 import Environnement
 #import bmesh 
 from mathutils import Vector, Matrix
+import moveController
+
 
 # reload files in blender if they changed
 import importlib
-importlib.reload(pathConfig)
+importlib.reload(config)
 importlib.reload(Environnement)
+importlib.reload(moveController)
 
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
+logging.basicConfig(filename=config.logFile,level=logging.DEBUG)
 
 
 
 def readCommandFile():
     
     #Test if file exist
-    jsonFile = Path(pathConfig.commandFile)
+    jsonFile = Path(config.commandFile)
     if jsonFile.exists(): 
         commandData = None     
-        with open(pathConfig.commandFile) as data_file: 
+        with open(config.commandFile) as data_file: 
             commandData = json.load(data_file)
         #suppression du fichier d'entree
         try:
-            os.remove(pathConfig.commandFile)
+            os.remove(config.commandFile)
         except:
             return None
         return commandData
@@ -42,7 +45,7 @@ def playNewGame(numGame):
     
     env.reset()
 
-    stop = false; 
+    stop = false 
     while True:
         data = readCommandFile()
         if (data == None):
@@ -57,9 +60,11 @@ def playNewGame(numGame):
                 break
             
             numImg +=1
-            imageFile = pathConfig.gamesDir+"\\game"+str(numGame).zfill(5)+"_"+str(numImg).zfill(5)+'.png'
+            imageFile = config.gamesDir+"\\game"+str(numGame).zfill(5)+"_"+str(numImg).zfill(5)+'.png'
             actionRot = data["rotZ"]
             
+            # get Car move in blender env according to the command
+            moveController.getMove(actionRot)
                         
             # Get reward
 
@@ -68,7 +73,7 @@ def playNewGame(numGame):
             reward, done = env.next(actionRot)
             
             # Copy rendered view to game output dir for debug...
-            copyfile(pathConfig.renderedImageFile, imageFile)
+            copyfile(config.renderedImageFile, imageFile)
             
             if done:
                 print ('GAME OVER...')

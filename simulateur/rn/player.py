@@ -6,13 +6,13 @@ import logging
 import playerInputReader as input
 import imageAnalyzer
 import RnController
-import itertools
+from multiprocessing.connection import Client
 import sys
 sys.path.insert(0, '../')
-import pathConfig
+import config
 
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
+logging.basicConfig(filename=config.logFile,level=logging.DEBUG)
 
 
 def writeCommandFile(action, stop=False):
@@ -21,16 +21,23 @@ def writeCommandFile(action, stop=False):
         message = '{\"stop\":\"true\"}'
     else:
         message = '{\"direction\":\"'+str(action)+'\"}'
-    nbTry=3
-    while (nbTry > 0):
-        try:
-            with open(pathConfig.commandFile, 'w') as outfile:
-                outfile.write(message)
-                outfile.close
-                break
-        except:
-            nbTry = nbTry-1
-            time.sleep(0.001)
+    #nbTry=3
+    #while (nbTry > 0):
+    #    try:
+    #        with open(config.commandFile, 'w') as outfile:
+    #            outfile.write(message)
+    #            outfile.close
+    #            print('Write command done...')
+    #            break
+    #    except:
+    #        nbTry = nbTry-1
+    #        print('Write command delayed...')
+    #        time.sleep(0.001)
+    clientSocket = Client((config.COMMAND_SERVER, config.COMMAND_PORT), 'AF_INET')
+    #clientSocket.send(struct.pack("L", len(message)))
+    clientSocket.send(message)
+    clientSocket.close()
+    logging.debug("write command done... ")
             
             
 
@@ -38,7 +45,7 @@ gamePlayer = RnController.RnController()
 numGame = 0
 reward_store = []
 nb_step_store = []
-jsonOutputFile = pathConfig.commandFile
+jsonOutputFile = config.commandFile
 stop = False
 
 # On boucle sur les parties

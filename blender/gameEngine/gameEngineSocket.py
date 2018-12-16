@@ -1,7 +1,7 @@
 import logging
 import sys
 sys.path.insert(0, '../simulateur')
-import pathConfig
+import config
 import commonSocket as sock
 import time
 import queue
@@ -10,10 +10,10 @@ from multiprocessing.connection import Listener
 from multiprocessing.connection import Client
 import codecs
 
-addressCommands = ('127.0.0.1', 6549)
-addressRender = ('127.0.0.1', 6559)
+addressCommands = (config.COMMAND_SERVER, config.COMMAND_PORT)
+addressRender = (config.RENDER_SERVER, config.RENDER_PORT)
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.WARNING, format='%(asctime)s %(message)s')
+logging.basicConfig(filename=config.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 
 def readCommandFile():
@@ -39,6 +39,8 @@ def readCommandQueue():
         data = commandQueue.get_nowait()
         if (data != None):
             logging.debug("Command received from queue ")
+        else:
+            logging.debug("Command received from queue is None ! ")
         return data
  
 def writeCarLocationFile(car, stop=False):

@@ -3,17 +3,17 @@ import logging
 #import moveController
 import sys
 sys.path.insert(0, '../')
-import pathConfig
+import config
 #import bmesh 
 from mathutils import Vector, Matrix
 
 # reload files in blender if they changed
 import importlib
-importlib.reload(pathConfig)
+importlib.reload(config)
 #importlib.reload(moveController)
 
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
+logging.basicConfig(filename=config.logFile,level=logging.DEBUG)
 
 
 class Environnement:
@@ -47,7 +47,7 @@ class Environnement:
         self.totalScore = 0
         self.target_index = 0
         
-        #get object
+        #get road object
         roadOriginal = bpy.data.objects['roadPart']
         #make it active
         #bpy.context.active_object = roadOriginal
@@ -68,7 +68,8 @@ class Environnement:
         bpy.ops.object.modifier_apply(apply_as='DATA', modifier="Curve")
         
         # targets tous les N intervalles
-        # marche pas : self.targets = road.data.polygons[0::2]
+        # marche pas : self.targets = road.data.polygons[0::2]...
+        # bon ben target a chaque tuile...
         self.targets = road.data.polygons
 
         #for face in road.data.polygons[0::2]:
@@ -87,12 +88,14 @@ class Environnement:
             bpy.ops.object.delete()
         
     
+    # Check if the car (point1) is close to the goal (point2)
+    # check that distance^2 < R^2
     def _isCloseTo(self, point1, point2):
         # distance ^2
         distance2 = (point1[0]-point2[0])**2 + (point1[1]-point2[1])**2 + (point1[2]-point2[2])**2
         return distance2 < self.RAYON**2
     
-    
+    # Move the car
     def _move(self, movx, movy, rotZ):
         global logging
     
@@ -112,7 +115,7 @@ class Environnement:
     
     def _render(self):
         #render frame
-        bpy.data.scenes["Scene"].render.filepath = pathConfig.renderedImageFile
+        bpy.data.scenes["Scene"].render.filepath = config.renderedImageFile
         bpy.ops.render.render( write_still=True )
 
     def _writeStepResult(self, gain, totalScore, done):
@@ -120,7 +123,7 @@ class Environnement:
         nbTry=3
         while (nbTry > 0):
             try:
-                with open(pathConfig.gameOutputFile, 'w') as outfile:
+                with open(config.gameOutputFile, 'w') as outfile:
                     outfile.write(message)
                     outfile.close
                     break
@@ -129,12 +132,6 @@ class Environnement:
                 time.sleep(0.001)
 
     # move, render and calculate reward. Say if the game is over
-#    def next(self, action):
-#        # move according to action
-#        movX, movY, rotZ = moveController.getMove(action)
-#        self._move(movX, movY, rotZ)
-#        voiturePoint = bpy.data.objects['Voiture'].co
-#
     def next(self, x, y, z, rotZ):
 
        

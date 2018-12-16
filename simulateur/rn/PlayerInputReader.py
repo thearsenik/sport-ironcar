@@ -4,7 +4,7 @@ import os
 import json
 import sys
 sys.path.insert(0, '../')
-import pathConfig
+import config
 import cv2
 
 
@@ -13,12 +13,12 @@ import cv2
 def readImageFromBlender():
     
     #Test if file exist
-    image = Path(pathConfig.renderedImageFile)
+    image = Path(config.renderedImageFile)
     if image.exists():     
         try:    
-            frame = cv2.imread(pathConfig.renderedImageFile)
+            frame = cv2.imread(config.renderedImageFile)
             #suppression du fichier d'entree
-            os.remove(pathConfig.renderedImageFile)
+            os.remove(config.renderedImageFile)
         except:
             return None
         return frame
@@ -31,14 +31,14 @@ def readImageFromBlender():
 def readInputFile():
     
     #Test if file exist
-    jsonFile = Path(pathConfig.gameOutputFile)
+    jsonFile = Path(config.gameOutputFile)
     if jsonFile.exists(): 
         data = None     
         try:
-            with open(pathConfig.detectionFile) as data_file: 
+            with open(config.gameOutputFile) as data_file: 
                 data = json.load(data_file)
                 #suppression du fichier d'entree
-                os.remove(pathConfig.detectionFile)
+                os.remove(config.gameOutputFile)
         except:
             return None
         return data

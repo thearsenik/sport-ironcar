@@ -1,10 +1,10 @@
 import logging
-import pathConfig
+import config
 # Set your detector according to your player
 import ImageAnalyzer_DottedLine as imageAnalyzer
 
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename=config.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 class Player:
 

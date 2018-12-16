@@ -7,31 +7,31 @@ from shutil import copyfile
 from pathlib import Path
 sys.path.insert(0, '../simulateur/')
 sys.path.insert(0, '../simulateur/rn/')
-import pathConfig
+import config
 import Environnement
 #import bmesh 
 from mathutils import Vector, Matrix
 
 # reload files in blender if they changed
 import importlib
-importlib.reload(pathConfig)
+importlib.reload(config)
 importlib.reload(Environnement)
 
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG)
+logging.basicConfig(filename=config.logFile,level=logging.DEBUG)
 
 
 
 def readCarLocationFile():
     #Test if file exist
-    jsonFile = Path(pathConfig.carLocation)
+    jsonFile = Path(config.carLocation)
     if jsonFile.exists(): 
         data = None   
         try:        
-            with open(pathConfig.carLocation) as data_file: 
+            with open(config.carLocation) as data_file: 
                 data = json.load(data_file)
             #suppression du fichier d'entree
-            os.remove(pathConfig.carLocation)
+            os.remove(config.carLocation)
         except:
             return None
         return data
@@ -46,6 +46,7 @@ def playNewGame(numGame):
     numImg = 0
     
     env.reset()
+
     stop = False; 
     while True:
         data = readCarLocationFile()
@@ -66,8 +67,8 @@ def playNewGame(numGame):
                 
             # To debug, copy rendered view to game output directory...
             numImg +=1
-            imageFile = pathConfig.gamesDir+"\\game"+str(numGame).zfill(5)+"_"+str(numImg).zfill(5)+'.png'
-            copyfile(pathConfig.renderedImageFile, imageFile)
+            imageFile = config.gamesDir+"\\game"+str(numGame).zfill(5)+"_"+str(numImg).zfill(5)+'.png'
+            copyfile(config.renderedImageFile, imageFile)
             
             if done:
                 print ('GAME OVER...')
