@@ -79,6 +79,25 @@ def writeCarLocationAndRender(car, render, stop=False):
     logging.debug("GE : writeCarLocationAndRender stop.")
     
     
+
+def writeStepResult(gain, totalScore, done, stop=False):
+    global addressRender
+    message = None
+    if (stop):
+        message = '{\"stop\":true}'
+    else:
+        message = '{\"reward\":'+str(gain)+', \"done\":'+_toBooleanStr(done)+', \"totalScore\":'+str(totalScore)+'}'
+    logging.debug("GE output message :"+message)    
+    clientSocket = Client(addressRender, 'AF_INET')
+    clientSocket.send(message)
+    clientSocket.close() 
+
+def _toBooleanStr(boolValue):
+    if boolValue:
+        return 'true'
+    return 'false'
+
+    
 logging.debug("Creating socket on : "+str(addressCommands[0])+" "+str(addressCommands[1]))
 commandsListener = Listener(addressCommands, 'AF_INET') 
 #create a queue to get commands
