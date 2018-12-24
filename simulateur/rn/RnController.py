@@ -36,7 +36,7 @@ class RnController:
     def compute(self, reward, pointilles):
             
             ##### Formatage des inputs #####
-            # chaque entree va etre de la forme : angle/180, distance au centre, hauteur, wasPreviousActionAction1, wasPreviousActionAction2, ... , wasPreviousActionActionN
+            # chaque entree va etre de la forme : angle de -1 a +1 (angle/90), distance au centre, hauteur, wasPreviousActionAction1, wasPreviousActionAction2, ... , wasPreviousActionActionN
             # par defaut angle=90, distance=0, hauteur=1, action precedente = index nbAction/2
             #Input :
             # angle in degrees-90/90,
@@ -46,7 +46,7 @@ class RnController:
             # was action 1 previously selected,
             # ...
             # was action n previously selected
-            inputs = [(0, 0, 1, (0, 0, 1, 0, 0))]
+            inputs = [(0, 0, 1, (0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0))]
             
             # On ne prend qu'un des pointilles
             last = len(pointilles)-1

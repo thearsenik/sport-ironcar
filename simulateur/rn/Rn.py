@@ -19,14 +19,14 @@ class Rn:
     ALPHA = 0.01
     #ALPHA_Max = 1
     #ALPHA_Min = 1e-2 
-    # 5 actions possibles:
+    # 13 actions possibles:
     # ---------------------
     #   0=tourne a fond a gauche
-    #   1=tourne un peu a gauche
-    #   2=tout droit (action par defaut)
-    #   3=tourne a fond a droite
-    #   4=tourne un peu a droite
-    DEFAULT_PREVIOUS_ACTION = [0, 0, 1, 0, 0]
+    #   ...
+    #   6=tout droit (action par defaut)
+    #   ...
+    #   12=tourne a fond a droite
+    DEFAULT_PREVIOUS_ACTION = [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0]
     NB_ACTIONS = len(DEFAULT_PREVIOUS_ACTION)
 
 
@@ -49,7 +49,7 @@ class Rn:
         
     def _make_network(self):
 
-        # input: angle, distance, hauteur, actionPrecedentesPossibles => 8
+        # input: angle, distance, hauteur, actionPrecedentesPossibles => 16
         nb_inputs = 3+self.NB_ACTIONS
         inputs = tf.placeholder(dtype=tf.float32, shape=(None, nb_inputs))
         # outputs : autant que d'actions possibles (on a toujours les meme actions possibles quel que soit l'etat)
