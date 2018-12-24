@@ -14,7 +14,7 @@ class Player:
         self.previousDirection = None
         self.numStep = 0
         self.previousRotZIndex = round((len(self.rotAnglesDegree)-1)/2)
-        self.previousRotAngle = 90
+        self.previousRotAngle = 0
         
     # normalize angle from -1 (0°) to +1 (180°)
     def _normalizeAngle(self, angleInDegrees):
@@ -30,34 +30,8 @@ class Player:
                     if (valeur-value) > (value - self.rotAnglesDegree[i-1]):
                         index = index-1
                 break
-        return index
+        return index        
         
-        
-        
-        
-    def compute(self, frame):
-        logging.debug("player_Arnaud : compute start. ")
-        self.numStep = self.numStep+1
-        pointilles = imageAnalyzer.getDetection(frame, 1, self.numStep)
-                          
-        # On ne prend qu'un des pointilles (celui le plus haut)
-        last = len(pointilles)-1
-        pointille = None
-        if len(pointilles) > 0:
-            # On ne prend que le dernier pointille de la liste (le plus haut sur l'image)
-            pointille = pointilles[last]
-
-            vitesse, direction = self._getMove(pointille[0], pointille[1], pointille[2])
-            
-            self.previousDirection = direction
-            
-        elif self.previousDirection != None:
-            direction = self.previousDirection           
-        else:
-            direction = 0
-
-        logging.debug("player_Arnaud : compute end. ")
-        return direction
 
     def _sign(self, number):
         if number < 0:
@@ -66,28 +40,32 @@ class Player:
 
 
     def _getMove(self, angle, distance, hauteur):
-        
-        ### Rotation
-        rotAngle = (angle-90)
+        logging.debug('_getMove angle='+str(angle)+' distance='+str(distance)+' hauteur='+str(hauteur))
+        ### Rotation (angle positif vers la droite, negatif vers la gauche, 0 tout droit)
+        rotAngle = (90-angle)
         # Si la rotation passe de 90 à -90 on reste a 90...
         if abs(rotAngle-self.previousRotAngle) > 90:
             rotAngle = -self._sign(rotAngle)*90
+            logging.debug('correction angle, nouvel angle='+str(rotAngle))
         self.previousRotAngle = rotAngle
         
-        # Rotation pour recentrer la ligne, plus c'est loin, plus on tourne
-        rotDistance = -90*distance
+        # Rotation pour recentrer la ligne meme si il n'y a pas d'angle, plus c'est loin, plus on tourne
+        rotDistance = 90*distance
+        
+        # Si le pointille le plus loin est trop pres (vers le bas), il de vient urgent de tourner !
+        rotUrgence = rotAngle*(1-hauteur)*(1-hauteur)*(1-hauteur)*(1-hauteur)
         
         #On ajoute les deux en rajoutant un biais pour augmenter le pouvoir de la distance
-        rotCorrigee = (rotAngle + rotDistance)*distance*distance+rotAngle*(1-hauteur)*(1-hauteur)*(1-hauteur)*(1-hauteur)
-        print('rotCorrigee '+str(rotCorrigee))
+        rotCorrigee = (rotAngle + rotDistance)*distance*distance+rotUrgence
+        logging.debug('rotCorrigee '+str(rotCorrigee))
         
         #On determine le vrai angle en le discretisant
         #On retrouve l'index correspondant dans les valeurs possibles
         indexVoulu = self._getIndexFromValue(rotCorrigee)
-        print('indexVoulu '+str(indexVoulu))
+        logging.debug('indexVoulu '+str(indexVoulu))
         #Comme en vrai la variation ne peut pas etre instantannee on bouge d'un cran vers l'index suivant
         rotZIndex = self._getRotationAvecInertie(indexVoulu)
-        print('index '+str(rotZIndex))
+        logging.debug('index '+str(rotZIndex))
         #The rotZIndex is converted to direction by centering 0 value as 0
         direction = rotZIndex - round((len(self.rotAnglesDegree)-1)/2)
         #direction = rotZIndex
@@ -119,3 +97,32 @@ class Player:
         
         self.previousRotZIndex = index
         return index 
+    
+    
+    
+    
+    
+    def compute(self, frame):
+        logging.debug("player_Arnaud : compute start. ")
+        self.numStep = self.numStep+1
+        pointilles = imageAnalyzer.getDetection(frame, 1, self.numStep)
+        
+        vitesse = 2               
+        # On ne prend qu'un des pointilles (celui le plus haut)
+        last = len(pointilles)-1
+        pointille = None
+        if len(pointilles) > 0:
+            # On ne prend que le dernier pointille de la liste (le plus haut sur l'image)
+            pointille = pointilles[last]
+
+            vitesse, direction = self._getMove(pointille[0], pointille[1], pointille[2])
+            
+            self.previousDirection = direction
+            
+        elif self.previousDirection != None:
+            direction = self.previousDirection           
+        else:
+            direction = 0
+
+        logging.debug("player_Arnaud : compute end. ")
+        return vitesse, direction

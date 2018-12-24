@@ -21,17 +21,17 @@ def getAngle(rect):
 
 def getDistance(rect):
     #if width < height
-    distancePx = (rect[0][0]-100) #100 = img_Width/2
+    distancePx = (rect[0][0]-config.IMG_WIDTH/2)
     
-    distance = distancePx/100 #100 = img_Width/2
+    distance = distancePx/(config.IMG_WIDTH/2)
     
     return distance
 
 def getHauteur(rect):
     #if width < height
-    hauteurPy = (150-rect[0][1])
+    hauteurPy = (config.IMG_HEIGHT-rect[0][1])
     
-    hauteur = hauteurPy/150
+    hauteur = hauteurPy/config.IMG_HEIGHT
     
     return hauteur
 

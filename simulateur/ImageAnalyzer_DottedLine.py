@@ -107,7 +107,7 @@ def getDetection(frame, numGame, numImg):
             output = Image.fromarray(frame)
             pngOutputFile = config.analyzerDebugDir+"/debugOutput"+str(numGame).zfill(5)+'_'+str(numImg).zfill(5)+'.png'
             output.save(pngOutputFile)
-            logging.debug("ImageAnalyzer : output debug end. ")
+            logging.debug("ImageAnalyzer : output debug end: "+pngOutputFile)
         
         #On attend un peu que blender nous fasse un rendu...
         #print("new image done : "+str(numImg))

@@ -15,12 +15,12 @@ logging.basicConfig(filename=config.logFile,level=logging.DEBUG, format='%(ascti
 
 addressRender = (config.RENDER_SERVER, config.RENDER_PORT)
 
-def writeCommandFile(action, stop=False):
+def writeCommandFile(vitesse, direction, stop=False):
     message = None
     if (stop):
         message = '{\"stop\":\"true\"}'
     else:
-        message = '{\"direction\":\"'+str(action)+'\"}'
+        message = '{\"direction\":\"'+str(direction)+'\", \"speed\":\"'+str(vitesse)+'\"}'
     #nbTry=3
     #while (nbTry > 0):
     #    try:
@@ -40,12 +40,12 @@ def writeCommandFile(action, stop=False):
     logging.debug("write command done... ")
             
     
-def readLocationFile():
+def readGameResultFile():
     global locationListener
-    logging.debug("listening for location... ")
-    locationSocket = locationListener.accept()
-    data = sock.read_json(locationSocket)
-    logging.debug("Json location read: "+str(data))
+    logging.debug("listening for game result... ")
+    gameResultSocket = gameResultListener.accept()
+    data = sock.read_json(gameResultSocket)
+    logging.debug("Json game result read: "+str(data))
     
     return data        
 
@@ -57,15 +57,16 @@ time2 = 0
 cpt = 0
 
 
-locationListener = Listener(addressRender, 'AF_INET')   
+gameResultListener = Listener(addressRender, 'AF_INET')   
 # Nouvelle partie
-writeCommandFile(0)
-readLocationFile()
+writeCommandFile(2, 0)
+data = readGameResultFile()
 # Launch exe
 #subprocess.Popen(['d:/dev/ironcar/ironcarAgfa/sport-ironcar/blender/roadGameEngineWithSocket.exe'])
 # on boucle sur les steps...
 while True:
-    
+    if data['done']:
+        player = Player.Player()    
     frame = input.readImageFromBlender()
     if frame is None:
         if waitStateChanged == False:
@@ -83,10 +84,10 @@ while True:
         # get result
         #print('New step...')
         time1 = time.time() * 1000
-        action = player.compute(frame) 
+        vitesse, direction = player.compute(frame) 
         time2 = time.time() * 1000
-        print('direction taken : '+str(action))
+        print('direction taken : '+str(direction))
         print('analyse en '+str(time2-time1)+'ms')
         #On ecrit l'action
-        writeCommandFile(action)
-        readLocationFile()
+        writeCommandFile(vitesse, direction)
+        data = readGameResultFile()
