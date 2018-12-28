@@ -1,18 +1,18 @@
-from pathlib import Path
 import time
 import logging
-import playerInputReader as input
+import sys
+sys.path.insert(0, '../')
 import commonSocket as sock
 from multiprocessing.connection import Listener
 from multiprocessing.connection import Client
-import Player_Arnaud_forRN as Player
-import sys
-sys.path.insert(0, '../')
 import config
+import playerInputReader as input
+import Player_Arnaud_forRN as Player
 
 
 logging.basicConfig(filename=config.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
 
+addressRender = (config.RENDER_SERVER, config.RENDER_PORT)
 
 def writeCommandFile(vitesse, direction, stop=False):
     message = None
@@ -40,13 +40,13 @@ def writeCommandFile(vitesse, direction, stop=False):
             
 
 def readGameResultFile():
-    global locationListener
-    logging.debug("listening for location... ")
-    locationSocket = locationListener.accept()
-    data = sock.read_json(locationSocket)
-    logging.debug("Json location read: "+str(data))
+    global gameResultListener
+    logging.debug("listening for game result... ")
+    gameResultSocket = gameResultListener.accept()
+    data = sock.read_json(gameResultSocket)
+    logging.debug("Json game result read: "+str(data))
     
-    return data        
+    return data          
 
 waitStateChanged = False
 time1 = 0
@@ -54,7 +54,7 @@ time2 = 0
 cpt = 0
 
 
-locationListener = Listener(addressRender, 'AF_INET')   
+gameResultListener = Listener(addressRender, 'AF_INET')   
            
 
 
@@ -81,6 +81,7 @@ while numGame < num_episodes:
         
             if ('stop' in data):
                 print("STOP...")
+                logging.debug("STOP...")
                 stop = True
                 break
             elif ('done' in data):

@@ -41,7 +41,7 @@ def writeCommandFile(vitesse, direction, stop=False):
             
     
 def readGameResultFile():
-    global locationListener
+    global gameResultListener
     logging.debug("listening for game result... ")
     gameResultSocket = gameResultListener.accept()
     data = sock.read_json(gameResultSocket)
