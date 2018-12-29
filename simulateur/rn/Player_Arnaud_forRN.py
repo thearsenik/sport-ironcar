@@ -19,7 +19,7 @@ class Player:
         self.previousRotZIndex = round((len(self.rotAnglesDegree)-1)/2)
         self.previousRotAngle = 90
         self.rnController = RnController.RnController()
-        self.startNewGame()
+        self.rnController.startNewGame()
         
     # normalize angle from -1 (0°) to +1 (180°)
     def _normalizeAngle(self, angleInDegrees):

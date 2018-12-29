@@ -3,6 +3,7 @@ import logging
 import sys
 sys.path.insert(0, '../')
 import commonSocket as sock
+import socket
 from multiprocessing.connection import Listener
 from multiprocessing.connection import Client
 import config
@@ -53,9 +54,14 @@ time1 = 0
 time2 = 0
 cpt = 0
 
-
-gameResultListener = Listener(addressRender, 'AF_INET')   
-           
+gameResultListener = None
+try:
+    gameResultListener = Listener(addressRender, 'AF_INET')   
+except OSError:  
+    #socket is already in use... reuse it
+    gameResultListener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    gameResultListener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    gameResultListener.bind((addressRender[0], addressRender[1]))    
 
 
 numGame = 0
@@ -84,7 +90,7 @@ while numGame < num_episodes:
                 logging.debug("STOP...")
                 stop = True
                 break
-            elif ('done' in data):
+            elif ('done' in data) and (data['done'] == True):
                 print ('GAME OVER...')
                 logging.debug('GAME OVER... en '+str(numStep)+'steps score='+str(data["totalScore"]))
                 # store results

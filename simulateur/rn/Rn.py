@@ -5,6 +5,7 @@ import config
 import tensorflow as tf
 import numpy as np
 import random
+import math
 
 
 logging.basicConfig(filename=config.logFile,level=logging.DEBUG)
@@ -17,8 +18,9 @@ class Rn:
     Y = 0.95
     # Exploration/exploitation ration (Learning ratio)
     ALPHA = 0.01
-    #ALPHA_Max = 1
-    #ALPHA_Min = 1e-2 
+    MIN_ALPHA = 0.01
+    MAX_ALPHA = 1
+    LAMBDA = 0.0001
     # 13 actions possibles:
     # ---------------------
     #   0=tourne a fond a gauche
@@ -33,6 +35,7 @@ class Rn:
 
     def __init__(self):
         self.alpha = 1
+        self._steps = 0
         self.V = 0
         self.previousAction = self.DEFAULT_PREVIOUS_ACTION
         tf.reset_default_graph()
@@ -126,14 +129,15 @@ class Rn:
 
     # Replay a batch to train the nn.
     # each item of batch is composed of:
-    #    - the inputs (angle, distance, height, the previous previous action (as array of all possible action))
+    #    - the inputs (angle, distance, height, the previous previous action (as flat array of all possible action))
     #    - the previous action
     #    - the reward
-    #    - the next state as (new angle, new distance, new height, the action (as array of all possible action) that lead to this state (previous action)
+    #    - the next state as (new angle, new distance, new height, the action (as flat array of all possible action) that lead to this state (previous action)
     def replay(self, batch):
         
         states = np.array([val[0] for val in batch])
-        next_states = np.array([(np.zeros(4) if val[3] is None else val[3]) for val in batch])
+        notDeterminedNextState = np.zeros(3+self.NB_ACTIONS)
+        next_states = np.asarray([(notDeterminedNextState if val[3] is None else val[3]) for val in batch])
         # predict Q(s,a) given the batch of states
         q_s_a = self._predict_batch(states, self.sess)
         # predict Q(s',a') - so that we can do gamma * max(Q(s'a')) below
@@ -156,14 +160,19 @@ class Rn:
             y[i] = current_q
         self.train_batch(self.sess, x, y)
         
+        # exponentially decay the alpha value
+        self._steps += 1
+        self.alpha = self.MIN_ALPHA + (self.MAX_ALPHA - self.MIN_ALPHA) * math.exp(-self.LAMBDA * self._steps)
+        
         
         
                 
     def _choose_action(self, inputs):
-        if random.random() < self._eps:
-            choosen_index = random.randint(0, self.NB_ACTIONS - 1)
+        if random.random() < self.alpha:
             actions = [0]*self.NB_ACTIONS
+            choosen_index = random.randint(0, self.NB_ACTIONS - 1)
             actions[choosen_index] = 1
+            return actions
         else:
             return self._predict_one(inputs)
         

@@ -1,5 +1,6 @@
 import time
 import commonSocket as sock
+import socket
 from multiprocessing.connection import Listener
 import logging
 import playerInputReader as input
@@ -57,7 +58,16 @@ time2 = 0
 cpt = 0
 
 
-gameResultListener = Listener(addressRender, 'AF_INET')   
+gameResultListener = None
+try:
+    gameResultListener = Listener(addressRender, 'AF_INET')   
+except OSError:  
+    #socket is already in use... reuse it
+    gameResultListener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    gameResultListener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    gameResultListener.bind((addressRender[0], addressRender[1]))    
+
+ 
 # Nouvelle partie
 writeCommandFile(2, 0)
 data = readGameResultFile()

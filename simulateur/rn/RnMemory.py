@@ -1,3 +1,5 @@
+import random
+
 # Class used to store Rn results and constitute batch  input data
 class RnMemory:
     def __init__(self, max_memory):

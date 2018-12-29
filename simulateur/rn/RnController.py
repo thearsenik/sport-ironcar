@@ -52,7 +52,8 @@ class RnController:
             last = len(pointilles)-1
             if len(pointilles) > 0:
                 # On ne prend que le dernier pointille de la liste (le plus haut sur l'image)
-                inputs = [(self._normalizeAngle(pointilles[last]["angle"]), pointilles[last]["distance"], pointilles[last]["hauteur"], self.previousAction)];  
+                # pointille[0] = angle, pointille[1]=distance, pointille[2]=hauteur
+                inputs = [(self._normalizeAngle(pointilles[last][0]), pointilles[last][1], pointilles[last][2], self.previousAction)];  
             elif self.previousAction != None:
                 inputs = [(0, 0, 1, self.previousAction)]    
             # flatten the inputs into a one dimension array
