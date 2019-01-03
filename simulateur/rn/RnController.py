@@ -2,13 +2,12 @@ import numpy as np
 import logging
 import RnMemory
 import Rn
-import itertools
 import sys
 sys.path.insert(0, '../')
 import config
 
 
-logging.basicConfig(filename=config.logFile,level=logging.DEBUG)
+logging.basicConfig(filename=config.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 class RnController:
 
@@ -46,34 +45,39 @@ class RnController:
             # was action 1 previously selected,
             # ...
             # was action n previously selected
-            inputs = [(0, 0, 1, (0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0))]
+            inputs = self.RN.DEFAULT_INPUTS
             
-            # On ne prend qu'un des pointilles
-            last = len(pointilles)-1
             if len(pointilles) > 0:
                 # On ne prend que le dernier pointille de la liste (le plus haut sur l'image)
+                last = len(pointilles)-1
                 # pointille[0] = angle, pointille[1]=distance, pointille[2]=hauteur
-                inputs = [(self._normalizeAngle(pointilles[last][0]), pointilles[last][1], pointilles[last][2], self.previousAction)];  
-            elif self.previousAction != None:
-                inputs = [(0, 0, 1, self.previousAction)]    
-            # flatten the inputs into a one dimension array
-            flatInputs = list(itertools.chain.from_iterable(inputs))
-            #inputs = inputs.reshape((-1,inputs.size))
-            
+                inputs = [self._normalizeAngle(pointilles[last][0]), pointilles[last][1], pointilles[last][2]]; 
+            else:
+                inputs = [0, 0, 1]
+                
+            # we add previous action
+            if self.previousAction is None:
+                for action in self.RN.DEFAULT_PREVIOUS_ACTION:
+                    inputs.append(action)
+            else:
+                for action in self.previousAction:
+                    inputs.append(action)
+                    
             # store result in memory for batch replay and retrain RN
-            if self.previousAction != None:
+            if self.previous_inputs != None:
                 # Add to memory: take the new input as the new state (next_state)
-                self.memory.add_sample((self.previous_inputs, self.previousAction, reward, flatInputs))
+                self.memory.add_sample((self.previous_inputs, self.previousAction, reward, inputs))
+                logging.debug("RnController : addsample "+str((self.previous_inputs, self.previousAction, reward, inputs)))
                 
                 # Modify RN with gradient according to reward
                 self.RN.replay(self.memory.sample(self.NB_ITEM_IN_TRAINING_BATCH))
             
             # RN compute action to take according to the new input
-            action = self.RN.compute(flatInputs)
+            action = self.RN.compute(inputs)
             # Store result as previous action choice
             self.previousAction = action
             # Store input as previous input for next iteration
-            self.previous_inputs = flatInputs;
+            self.previous_inputs = inputs;
             
             # Get reward
             # convert result to action. Simply return index of the most significant output.

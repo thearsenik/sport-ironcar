@@ -40,7 +40,7 @@ class Player:
         
         
     def compute(self, reward, frame, numGame, numStep):
-        logging.debug("player_Arnaud : compute start. ")
+        logging.debug("player_Arnaud_forRN : compute start. ")
         self.numStep = numStep
         pointilles = imageAnalyzer.getDetection(frame, numGame, self.numStep)
 
@@ -49,7 +49,7 @@ class Player:
             
         self.previousDirection = direction
 
-        logging.debug("player_Arnaud : compute end. ")
+        logging.debug("player_Arnaud_forRN : compute end. ")
         return vitesse, direction
 
     def _sign(self, number):
