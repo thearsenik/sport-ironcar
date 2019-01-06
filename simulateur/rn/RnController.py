@@ -24,6 +24,8 @@ class RnController:
         # Store result as previous action choice
         self.previousAction = None
         self.previous_inputs = None
+        # init RN
+        self.RN.start(False)
 
         
     # normalize angle from -1 (0°) to +1 (180°)
@@ -45,26 +47,29 @@ class RnController:
             # was action 1 previously selected,
             # ...
             # was action n previously selected
-            inputs = self.RN.DEFAULT_INPUTS
+            inputs = None
             
             if len(pointilles) > 0:
                 # On ne prend que le dernier pointille de la liste (le plus haut sur l'image)
                 last = len(pointilles)-1
                 # pointille[0] = angle, pointille[1]=distance, pointille[2]=hauteur
-                inputs = [self._normalizeAngle(pointilles[last][0]), pointilles[last][1], pointilles[last][2]]; 
+                inputs =  np.array([self._normalizeAngle(pointilles[last][0]), pointilles[last][1], pointilles[last][2]]); 
             else:
-                inputs = [0, 0, 1]
+                inputs =  np.array([0, 0, 1])
                 
             # we add previous action
-            if self.previousAction is None:
+            if self.previousAction is None or len(self.previousAction) != self.RN.NB_ACTIONS:
                 for action in self.RN.DEFAULT_PREVIOUS_ACTION:
-                    inputs.append(action)
+                    inputs = np.append(inputs, action)
             else:
                 for action in self.previousAction:
-                    inputs.append(action)
+                    inputs = np.append(inputs, action)
                     
             # store result in memory for batch replay and retrain RN
-            if self.previous_inputs != None:
+            if self.previous_inputs is None:
+                print("previous_inputs is null...")
+            else:
+                print("previous_inputs length is "+str(len(self.previous_inputs)))
                 # Add to memory: take the new input as the new state (next_state)
                 self.memory.add_sample((self.previous_inputs, self.previousAction, reward, inputs))
                 logging.debug("RnController : addsample "+str((self.previous_inputs, self.previousAction, reward, inputs)))
@@ -77,11 +82,12 @@ class RnController:
             # Store result as previous action choice
             self.previousAction = action
             # Store input as previous input for next iteration
+            print("Setting previous_inputs with array of length "+str(len(inputs)))
             self.previous_inputs = inputs;
             
             # Get reward
             # convert result to action. Simply return index of the most significant output.
-            actionId = action.index(max(action)) # ou sinon np.argmax
+            actionId = np.argmax(action)
 
 
             return actionId

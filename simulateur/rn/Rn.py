@@ -51,41 +51,40 @@ class Rn:
         self.actions = None
         self.rewards = None
         #self.saver = tf.train.Saver()
-        self._q_s_a = tf.placeholder(dtype=tf.float32, shape=(None, self.NB_ACTIONS))
-
-        self._build_network()
+        self._q_s_a = None
         
         
     # cf https://github.com/adventuresinML/adventures-in-ml-code/blob/master/r_learning_tensorflow.py
     def _build_network(self):
         
-        inputs = tf.placeholder(dtype=tf.float32, shape=(None, self.NB_INPUTS))
+        self.inputs = tf.placeholder(dtype=tf.float32, shape=(None, self.NB_INPUTS))
+        self._q_s_a = tf.placeholder(dtype=tf.float32, shape=(None, self.NB_ACTIONS))
         # outputs : autant que d'actions possibles (on a toujours les meme actions possibles quel que soit l'etat)
         #self.actions = tf.placeholder(dtype=tf.float32, shape=(None, self.NB_ACTIONS))
         # recompense
         #rewards = tf.placeholder(dtype=tf.float32, shape=(None,1))
 
-        # either use variable scope or attributes ???
-        with tf.variable_scope('policy'):
-            # trois couches de nb_inputs neurones (autant que d'entrees), fully connected => dense
-            hidden1 = tf.layers.dense(inputs, self.NB_INPUTS, activation=tf.nn.relu, kernel_initializer = tf.contrib.layers.xavier_initializer())
-            hidden2 = tf.layers.dense(hidden1, self.NB_INPUTS, activation=tf.nn.relu, kernel_initializer = tf.contrib.layers.xavier_initializer())
-            hidden3 = tf.layers.dense(hidden2, self.NB_INPUTS, activation=tf.nn.relu, kernel_initializer = tf.contrib.layers.xavier_initializer())
-            # couche de sortie,  autant que d'actions possibles sans fonction d'activation
-            self.actions = tf.layers.dense(hidden3, self.NB_ACTIONS, activation=None, kernel_initializer = tf.contrib.layers.xavier_initializer())
+        
+        #with tf.variable_scope('policy'):
+        # trois couches de nb_inputs neurones (autant que d'entrees), fully connected => dense
+        hidden1 = tf.layers.dense(self.inputs, self.NB_INPUTS, activation=tf.nn.relu, kernel_initializer = tf.contrib.layers.xavier_initializer())
+        hidden2 = tf.layers.dense(hidden1, self.NB_INPUTS, activation=tf.nn.relu, kernel_initializer = tf.contrib.layers.xavier_initializer())
+        hidden3 = tf.layers.dense(hidden2, self.NB_INPUTS, activation=tf.nn.relu, kernel_initializer = tf.contrib.layers.xavier_initializer())
+        # couche de sortie,  autant que d'actions possibles sans fonction d'activation
+        self.actions = tf.layers.dense(hidden3, self.NB_ACTIONS, activation=None, kernel_initializer = tf.contrib.layers.xavier_initializer())
 
-            # traitement de la sortie
-            out = tf.sigmoid(self.actions, name="sigmoid")
-            
+        # traitement de la sortie
+        out = tf.sigmoid(self.actions, name="sigmoid")
+        
 
-            # façon de faire originelle:
-            loss = tf.losses.mean_squared_error(self._q_s_a, self.actions)
-            self._optimizer = tf.train.AdamOptimizer().minimize(loss)
-            # Autre façon de faire:
-            #cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(labels=actions, logits=self.actions, name="cross_entropy")
-            #loss = tf.reduce_sum(tf.multiply(rewards, cross_entropy, name="rewards"))
-            #decay_rate=0.99
-            #self.optimizer = tf.train.RMSPropOptimizer(self.ALPHA, decay=decay_rate).minimize(loss)
+        # façon de faire originelle:
+        loss = tf.losses.mean_squared_error(self._q_s_a, self.actions)
+        self._optimizer = tf.train.AdamOptimizer().minimize(loss)
+        # Autre façon de faire:
+        #cross_entropy = tf.nn.sigmoid_cross_entropy_with_logits(labels=actions, logits=self.actions, name="cross_entropy")
+        #loss = tf.reduce_sum(tf.multiply(rewards, cross_entropy, name="rewards"))
+        #decay_rate=0.99
+        #self.optimizer = tf.train.RMSPropOptimizer(self.ALPHA, decay=decay_rate).minimize(loss)
 
         tf.summary.histogram("hidden_out", hidden3)
         tf.summary.histogram("logits_out", self.actions)
@@ -97,19 +96,23 @@ class Rn:
         return out, merged
         
         
-    
-    def start(self, resume, render):
+    # resumeFromFile: indicate if we have to restart from stored data from a file
+    def start(self, resumeFromFile):
+        if self.sess != None:
+            self.sess.close()
+        
         tf.reset_default_graph()
         out_sym, merged_sym = self._build_network()
 
+        # Init new session with default graph
+        self.sess = tf.Session()
+        
         # writer = tf.summary.FileWriter('./log/train', self.sess.graph)
-
-        weight_path = config.rnCheckpointsFile
-        if resume:
-          # saver.restore(self.sess, tf.train.latest_checkpoint('./log/checkpoints'))
-          self.saver.restore(self.sess, tf.train.latest_checkpoint(weight_path))
+        if resumeFromFile:
+            weight_path = config.rnCheckpointsFile
+            self.saver.restore(self.sess, tf.train.latest_checkpoint(weight_path))
         else:
-          self.sess.run(tf.global_variables_initializer())
+            self.sess.run(tf.global_variables_initializer())
         
 
         
@@ -152,12 +155,12 @@ class Rn:
             if next_state is None:
                 # in this case, the game completed after action, so there is no max Q(s',a')
                 # prediction possible
-                current_q[action] = reward
+                current_q[np.argmax(action)] = reward
             else:
-                current_q[action] = reward + self.GAMMA * np.amax(q_s_a_d[i])
+                current_q[np.argmax(action)] = reward + self.GAMMA * np.amax(q_s_a_d[i])
             x[i] = state
             y[i] = current_q
-        self.train_batch(self.sess, x, y)
+        self._train_batch(x, y)
         
         
     # As we are exploring, either get Rn output, either get random output by comparing
@@ -173,18 +176,15 @@ class Rn:
             actions = [0]*self.NB_ACTIONS
             choosen_index = random.randint(0, self.NB_ACTIONS - 1)
             actions[choosen_index] = 1
-            return actions
+            return np.array(actions)
         else:
             return self._predict_one(inputs)
         
     def _predict_one(self, inputs):
-        return self.sess.run(self.actions, feed_dict={self.inputs: inputs })
-                                                # feed_dict={self.inputs: inputs.reshape(1, self.num_states)})
+        return self.sess.run(self.actions, feed_dict={self.inputs: inputs.reshape(1, self.NB_INPUTS)})
 
     def _predict_batch(self, inputs):
-        logging.debug("actions = "+str(self.actions))
-        logging.debug("inputs = "+str(inputs))
-        return self.sess.run(self.actions, feed_dict={self.inputs: inputs})
+        return self.sess.run(self.actions, feed_dict={self.inputs: np.array(inputs)})
     
     def _train_batch(self, x_batch, y_batch):
         return self.sess.run(self._optimizer, feed_dict={self.inputs: x_batch, self._q_s_a: y_batch})
