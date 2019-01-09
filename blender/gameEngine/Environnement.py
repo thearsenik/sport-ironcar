@@ -174,6 +174,7 @@ class Environnement:
        
         #By default no gain
         gain = 0
+        score = 0
         done = False
            
         voiturePoint = self._move(vitesse, direction)
@@ -201,8 +202,10 @@ class Environnement:
         
         # score de la partie
         self.totalScore = self.totalScore + gain
+        score = self.totalScore
         
         if done:
+            
             logging.debug('ENV: score of the game: '+str(self.totalScore))
             self._reset()
         # Render
@@ -212,7 +215,7 @@ class Environnement:
         
         
                 
-        return gain, self.totalScore, done
+        return gain, score, done
 
 
 
