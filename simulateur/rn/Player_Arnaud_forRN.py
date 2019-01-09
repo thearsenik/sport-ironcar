@@ -15,11 +15,16 @@ class Player:
     
     def __init__(self):
         self.previousDirection = None
-        self.numStep = 0
         self.previousRotZIndex = round((len(self.rotAnglesDegree)-1)/2)
         self.previousRotAngle = 90
         self.rnController = RnController.RnController()
+
+        
+    def startNewGame(self):
         self.rnController.startNewGame()
+        
+    def save(self):
+        self.rnController.saveRN()
         
     # normalize angle from -1 (0°) to +1 (180°)
     def _normalizeAngle(self, angleInDegrees):
@@ -40,9 +45,9 @@ class Player:
         
         
     def compute(self, reward, frame, numGame, numStep):
+        logging.debug("compute reward"+str(reward))
         logging.debug("player_Arnaud_forRN : compute start. ")
-        self.numStep = numStep
-        pointilles = imageAnalyzer.getDetection(frame, numGame, self.numStep)
+        pointilles = imageAnalyzer.getDetection(frame, numGame, numStep)
 
         # angle, distance du centre, hauteur sur l'image birdeye
         vitesse, direction = self._getMove(reward, pointilles)
@@ -60,6 +65,7 @@ class Player:
 
     def _getMove(self, reward, pointilles):
         
+        logging.debug("_getMove reward"+str(reward))
         indexVoulu = self.rnController.compute(reward, pointilles)
         
         print('indexVoulu '+str(indexVoulu))

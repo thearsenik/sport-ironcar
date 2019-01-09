@@ -14,9 +14,10 @@ class RnMemory:
 
 	# Add new item
     def add_sample(self, sample):
+#       logging.debug("RnMemory nbItems="+str(len(self._samples)))
         self._samples.append(sample)
         if len(self._samples) > self._max_memory:
-            logging.debug("RnMemory pop first element...")
+#            logging.debug("RnMemory pop first element...")
             self._samples.pop(0)
 
 	# Return a randomly defined set of nb_samples items from memory
@@ -25,5 +26,4 @@ class RnMemory:
             sample = random.sample(self._samples, len(self._samples))
         else:
             sample = random.sample(self._samples, nb_samples)
-        logging.debug("RnMemory sample lenght="+str(len(sample)))
         return sample

@@ -45,13 +45,15 @@ class Rn:
         self.V = 0
         self.previousAction = self.DEFAULT_PREVIOUS_ACTION
         tf.reset_default_graph()
-        self.sess = tf.Session()
+        self.sess = None
         self.optimizer = None
         self.inputs = None
         self.actions = None
         self.rewards = None
-        #self.saver = tf.train.Saver()
+        self.out = None
+        self.saver = None
         self._q_s_a = None
+        self._start()
         
         
     # cf https://github.com/adventuresinML/adventures-in-ml-code/blob/master/r_learning_tensorflow.py
@@ -73,8 +75,10 @@ class Rn:
         # couche de sortie,  autant que d'actions possibles sans fonction d'activation
         self.actions = tf.layers.dense(hidden3, self.NB_ACTIONS, activation=None, kernel_initializer = tf.contrib.layers.xavier_initializer())
 
-        # traitement de la sortie
-        out = tf.sigmoid(self.actions, name="sigmoid")
+        # traitement de la sortie pour avoir que un 1 et des 0       
+        threshold_to_max = tf.less_equal(tf.reduce_max(self.actions), self.actions)
+        #cast booleans to float32 (True => 1, False => 0)
+        self.out = tf.cast(threshold_to_max, tf.float32)
         
 
         # façon de faire originelle:
@@ -88,16 +92,18 @@ class Rn:
 
         tf.summary.histogram("hidden_out", hidden3)
         tf.summary.histogram("logits_out", self.actions)
-        tf.summary.histogram("prob_out", out)
+        tf.summary.histogram("prob_out", self.out)
         merged = tf.summary.merge_all()
+        
+        self.saver = tf.train.Saver()
 
         # grads = tf.gradients(loss, [hidden_w, logit_w])
         # return pixels, actions, rewards, out, optimizer, merged, grads
-        return out, merged
+        return self.out, merged
         
         
-    # resumeFromFile: indicate if we have to restart from stored data from a file
-    def start(self, resumeFromFile):
+    
+    def _start(self):
         if self.sess != None:
             self.sess.close()
         
@@ -108,13 +114,18 @@ class Rn:
         self.sess = tf.Session()
         
         # writer = tf.summary.FileWriter('./log/train', self.sess.graph)
-        if resumeFromFile:
-            weight_path = config.rnCheckpointsFile
+        try:
+            logging.debug("RN initialized from file :"+config.rnCheckpointsFile)
+            weight_path = open(config.rnCheckpointsFile, 'r')
             self.saver.restore(self.sess, tf.train.latest_checkpoint(weight_path))
-        else:
+        except FileNotFoundError:
+            logging.debug("RN initialized randomly...")
             self.sess.run(tf.global_variables_initializer())
         
 
+    #save model
+    def save(self):
+        self.saver.save(self.sess, config.rnCheckpointsFile)
         
     # method used to process a new state provided by the environment
     def compute(self, inputs):
@@ -173,18 +184,20 @@ class Rn:
         self.alpha = self.MIN_ALPHA + (self.MAX_ALPHA - self.MIN_ALPHA) * math.exp(-self.LAMBDA * self._steps)
 
         if random.random() < self.alpha:
+            logging.debug("ACTION ALEATOIRE")
             actions = [0]*self.NB_ACTIONS
             choosen_index = random.randint(0, self.NB_ACTIONS - 1)
             actions[choosen_index] = 1
             return np.array(actions)
         else:
+            logging.debug("ACTION CALCULEE")
             return self._predict_one(inputs)
         
     def _predict_one(self, inputs):
-        return self.sess.run(self.actions, feed_dict={self.inputs: inputs.reshape(1, self.NB_INPUTS)})
+        return self.sess.run(self.out, feed_dict={self.inputs: inputs.reshape(1, self.NB_INPUTS)})
 
     def _predict_batch(self, inputs):
-        return self.sess.run(self.actions, feed_dict={self.inputs: np.array(inputs)})
+        return self.sess.run(self.out, feed_dict={self.inputs: np.array(inputs)})
     
     def _train_batch(self, x_batch, y_batch):
         return self.sess.run(self._optimizer, feed_dict={self.inputs: x_batch, self._q_s_a: y_batch})

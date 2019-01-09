@@ -69,71 +69,87 @@ reward_store = []
 nb_step_store = []
 jsonOutputFile = config.commandFile
 stop = False
+gamePlayer = Player.Player()
 
-# On boucle sur les parties
+# On boucle sur les parties... avec le meme Player
 num_episodes = 300
-while numGame < num_episodes:
-
-    numGame += 1
-    print('New game: '+str(numGame))
-    logging.debug('Start a new game: '+str(numGame))
+try:
+    while numGame < num_episodes:
     
-    # Nouvelle partie, on boucle sur les steps...
-    numStep = 0
-    gamePlayer = Player.Player()
-    writeCommandFile(2, 0)
-    data = readGameResultFile() 
-    while True:
+        numGame += 1
+        print('New game: '+str(numGame))
+        logging.debug('Start a new game: '+str(numGame))
         
-            if ('stop' in data):
-                print("STOP...")
-                logging.debug("STOP...")
-                stop = True
-                break
-            elif ('done' in data) and (data['done'] == True):
-                print ('GAME OVER...')
-                logging.debug('GAME OVER... en '+str(numStep)+'steps score='+str(data["totalScore"]))
-                # store results
-                reward_store.append(data["totalScore"])
-                nb_step_store.append(numStep)
-                # Exit game...
-                break
+        # Nouvelle partie, on boucle sur les steps...
+        numStep = 0
+
+        writeCommandFile(2, 0)
+        data = readGameResultFile() 
+        noImgCounter = 0
+        
+        #reset RN
+        gamePlayer.startNewGame()
+        
+        while True:
             
-            reward = data['reward']
-            frame = input.readImageFromBlender()
-            if frame is None:
-                print('No image from game... wait...')
-                time.sleep(0.002)
-            else:
+                if ('stop' in data):
+                    print("STOP...")
+                    logging.debug("STOP...")
+                    stop = True
+                    break
+                elif ('done' in data) and (data['done'] == True):
+                    print ('GAME OVER...')
+                    logging.debug('GAME OVER... en '+str(numStep)+'steps score='+str(data['totalScore']))
+                    # store results
+                    reward_store.append(data['totalScore'])
+                    nb_step_store.append(numStep)
+                    # Exit game...
+                    break
                 
-                numStep +=1
-
-                # get RN result
-                vitesse, direction = gamePlayer.compute(reward, frame, numGame, numStep)     
-
-                #On ecrit l'action
-                writeCommandFile(vitesse, direction)
-                
-                # Wait for result from game engine
-                readGameResultFile()
-
+                reward = data['reward']
+                frame = input.readImageFromBlender()
+                if frame is None:
+                    noImgCounter = noImgCounter+1
+                    if noImgCounter == 10:
+                        print('No image from game... waiting...')
+                    time.sleep(0.002)
+                else:
+                    noImgCounter = 0 
+                    numStep +=1
     
-    if stop:
-        logging.debug('Abort due to stop command... ')
-        break
+                    # get RN result
+                    logging.debug("got reward"+str(reward))
+                    vitesse, direction = gamePlayer.compute(reward, frame, numGame, numStep)     
+    
+                    #On ecrit l'action
+                    writeCommandFile(vitesse, direction)
+                    
+                    # Wait for result from game engine
+                    data = readGameResultFile()
+    
         
-    
-#On ecrit l'action stop pour arreter blender
-writeCommandFile(None, None, True)
-    
-# draw results
-#import matplotlib.pylab as plt
-#plt.plot(reward_store)
-#plt.show()
-#plt.close("all")
-#plt.plot(nb_step_store)
-#plt.show()
-# write results
+        if stop:
+            logging.debug('Abort due to stop command... ')
+            break
+ 
+except KeyboardInterrupt:
+    print('interrupted!')           
+ 
+finally:
+    gamePlayer.save()
+    #On ecrit l'action stop pour arreter blender
+    #writeCommandFile(None, None, True)
+        
+    # draw results
+    import matplotlib.pylab as plt
+    plt.title('Total Score')
+    plt.plot(reward_store)
+    plt.show()
+    plt.close("all")
+    plt.title('Nb step')
+    plt.plot(nb_step_store)
+    plt.show()
+    # write results
 
     
 

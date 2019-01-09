@@ -24,9 +24,9 @@ class RnController:
         # Store result as previous action choice
         self.previousAction = None
         self.previous_inputs = None
-        # init RN
-        self.RN.start(False)
 
+    def saveRN(self):
+        self.RN.save()
         
     # normalize angle from -1 (0°) to +1 (180°)
     def _normalizeAngle(self, angleInDegrees):
@@ -69,7 +69,6 @@ class RnController:
             if self.previous_inputs is None:
                 print("previous_inputs is null...")
             else:
-                print("previous_inputs length is "+str(len(self.previous_inputs)))
                 # Add to memory: take the new input as the new state (next_state)
                 self.memory.add_sample((self.previous_inputs, self.previousAction, reward, inputs))
                 logging.debug("RnController : addsample "+str((self.previous_inputs, self.previousAction, reward, inputs)))
@@ -79,10 +78,10 @@ class RnController:
             
             # RN compute action to take according to the new input
             action = self.RN.compute(inputs)
+            logging.debug("Action = "+str(action))
             # Store result as previous action choice
             self.previousAction = action
             # Store input as previous input for next iteration
-            print("Setting previous_inputs with array of length "+str(len(inputs)))
             self.previous_inputs = inputs;
             
             # Get reward
