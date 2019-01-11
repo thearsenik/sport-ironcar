@@ -2,17 +2,19 @@ import bge
 import logging
 import sys
 sys.path.insert(0, '../simulateur')
-import pathConfig
+import config
 import time
 import gameEngineSocket as socketUtil
 import gameEngineRender as renderer
 
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.WARNING, format='%(asctime)s %(message)s')
+logging.basicConfig(filename=config.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 
 logging.debug("GE : cycle start.")
+time.sleep(0.005)
 data = socketUtil.readCommandQueue()
+logging.debug("data received: "+str(data))
 
 cont = bge.logic.getCurrentController()
 obj = cont.owner
@@ -54,10 +56,10 @@ if data != None:
     
     # render scene into file
     #logging.debug("GE : RENDER start.")
-    #bge.render.makeScreenshot(pathConfig.renderedImageFile)
+    bge.render.makeScreenshot(config.renderedImageFile)
     #logging.debug("GE : RENDER stop.")
     # Take a BGR picture in memory....
-    renderImg = renderer.render() 
+    #renderImg = renderer.render() 
     
     time2 = time.time() * 1000
     logging.debug("total render exec "+str(time2-time1))
@@ -69,12 +71,14 @@ if data != None:
     # Trouver l'objet "voiture" de cette scene
     car = my_scene.objects['Voiture']
     # Write the file
-    socketUtil.writeCarLocationAndRender(car, renderImg)
+    socketUtil.writeCarLocationFile(car)
+    #socketUtil.writeCarLocationAndRender(car, renderImg)
     
     
 else:
     #Si rien a faire... on desactive tout...
     for actuator in cont.actuators:
+        #logging.debug("GE : actuator desactive...")
         cont.deactivate(actuator)
         
 logging.debug("GE : cycle stop.")

@@ -1,5 +1,6 @@
 import numpy as np
 import cv2
+import config
 
 def remove_noise(img, kernelWidth, nbIteration):
 	kernel = np.ones((kernelWidth,kernelWidth),np.uint8)
@@ -20,23 +21,26 @@ def getAngle(rect):
 
 def getDistance(rect):
     #if width < height
-    distancePx = (rect[0][0]-100) #100 = img_Width/2
+    distancePx = (rect[0][0]-config.IMG_WIDTH/2)
     
-    distance = distancePx/100 #100 = img_Width/2
+    distance = distancePx/(config.IMG_WIDTH/2)
     
     return distance
 
 def getHauteur(rect):
     #if width < height
-    hauteurPy = (150-rect[0][1])
+    hauteurPy = (config.IMG_HEIGHT-rect[0][1])
     
-    hauteur = hauteurPy/150
+    hauteur = hauteurPy/config.IMG_HEIGHT
     
     return hauteur
 
 def perspective_warp(img, 
                      dst_size=(1200,900),
-                     src=np.float32([(0,26),(200,26),(-239,150),(239+200,150)]),
+                     src=np.float32([(0,26/150*config.IMG_HEIGHT),
+                                     (config.IMG_WIDTH,26/150*config.IMG_HEIGHT),
+                                     (-239/200*config.IMG_WIDTH,config.IMG_HEIGHT),
+                                     (239/200*config.IMG_WIDTH+config.IMG_WIDTH,config.IMG_HEIGHT)]),
                      dst=np.float32([(0,0), (1, 0), (0,1), (1,1)])):
  #   img_size = np.float32([(img.shape[1],img.shape[0])])
  #   src = src* img_size

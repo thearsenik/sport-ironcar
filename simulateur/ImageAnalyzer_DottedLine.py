@@ -6,7 +6,7 @@ from pathlib import Path
 import commonVideo as commonVideo
 import commonTraitement as utils
 import logging
-import pathConfig
+import config
 
 font = cv2.FONT_HERSHEY_SIMPLEX
 
@@ -14,19 +14,17 @@ previousAngle = 90
 previousDistance = 0
 previousHauteur = 0
 NB_ITERATIONS = 10000
-PRODUCE_DEBUG_IMG = False
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename=config.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 def _detectAngleAndDistance(frame):
     global previousAngle
     global previousDistance
     global previousHauteur
-    global PRODUCE_DEBUG_IMG
     
     # Convert to birdeye
     #logging.debug("ImageAnalyzer : Convert to birdeye start. ")
-    vueDessus = utils.perspective_warp(frame, (200,150))
+    vueDessus = utils.perspective_warp(frame, (config.IMG_WIDTH,config.IMG_HEIGHT))
     #logging.debug("ImageAnalyzer : Convert to birdeye end. ")
     
     # Convert BGR to HSV
@@ -84,7 +82,7 @@ def _detectAngleAndDistance(frame):
             hauteur = utils.getHauteur(rect)
             pointille = [angle, distance, hauteur]
             pointilles.append(pointille)        
-            if PRODUCE_DEBUG_IMG:
+            if config.PRODUCE_DEBUG_IMG:
                 box = cv2.boxPoints(rect)
                 box = np.int0(box)
                 #print("color="+str(min(i*60, 255)))
@@ -97,20 +95,19 @@ def _detectAngleAndDistance(frame):
 
 def getDetection(frame, numGame, numImg):
     
-        global PRODUCE_DEBUG_IMG
         
         #logging.debug("ImageAnalyzer : getDetection start. ")
         # get angle from image
         frame2, pointilles = _detectAngleAndDistance(frame)
         
         # For debug, save inputImage with detection and angle
-        if PRODUCE_DEBUG_IMG:
+        if config.PRODUCE_DEBUG_IMG:
             logging.debug("ImageAnalyzer : output debug start. ")
             frame = commonVideo.concat_images(frame, frame2)
             output = Image.fromarray(frame)
-            pngOutputFile = pathConfig.analyzerDebugDir+"/debugOutput"+str(numGame).zfill(5)+'_'+str(numImg).zfill(5)+'.png'
+            pngOutputFile = config.analyzerDebugDir+"/debugOutput"+str(numGame).zfill(5)+'_'+str(numImg).zfill(5)+'.png'
             output.save(pngOutputFile)
-            logging.debug("ImageAnalyzer : output debug end. ")
+            logging.debug("ImageAnalyzer : output debug end: "+pngOutputFile)
         
         #On attend un peu que blender nous fasse un rendu...
         #print("new image done : "+str(numImg))
@@ -125,6 +122,6 @@ def getDetection(frame, numGame, numImg):
 #imagesSuffix=''
 #imagesExtension='png'
 #listImages = [imageDebugDir+'/'+imagePrefix+str(numImg).zfill(5)+imagesSuffix+'.'+imagesExtension for numImg in list(range(firstNumImg, lastNumImg+1))]
-#commonVideo.video_from_images(listImages, pathConfig.videoDebugDir, 24)
+#commonVideo.video_from_images(listImages, config.videoDebugDir, 24)
 
 

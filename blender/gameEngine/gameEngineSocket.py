@@ -1,7 +1,7 @@
 import logging
 import sys
 sys.path.insert(0, '../simulateur')
-import pathConfig
+import config
 import commonSocket as sock
 import time
 import queue
@@ -10,10 +10,10 @@ from multiprocessing.connection import Listener
 from multiprocessing.connection import Client
 import codecs
 
-addressCommands = ('127.0.0.1', 6549)
-addressRender = ('127.0.0.1', 6559)
+addressCommands = (config.COMMAND_SERVER, config.COMMAND_PORT)
+addressRender = (config.RENDER_SERVER, config.RENDER_PORT)
 
-logging.basicConfig(filename=pathConfig.logFile,level=logging.WARNING, format='%(asctime)s %(message)s')
+logging.basicConfig(filename=config.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
 
 
 def readCommandFile():
@@ -39,6 +39,8 @@ def readCommandQueue():
         data = commandQueue.get_nowait()
         if (data != None):
             logging.debug("Command received from queue ")
+        else:
+            logging.debug("Command received from queue is None ! ")
         return data
  
 def writeCarLocationFile(car, stop=False):
@@ -76,6 +78,25 @@ def writeCarLocationAndRender(car, render, stop=False):
     clientSocket.close() 
     logging.debug("GE : writeCarLocationAndRender stop.")
     
+    
+
+def writeStepResult(gain, totalScore, done, stop=False):
+    global addressRender
+    message = None
+    if (stop):
+        message = '{\"stop\":true}'
+    else:
+        message = '{\"reward\":'+str(gain)+', \"done\":'+_toBooleanStr(done)+', \"totalScore\":'+str(totalScore)+'}'
+    logging.debug("GE output message :"+message)    
+    clientSocket = Client(addressRender, 'AF_INET')
+    clientSocket.send(message)
+    clientSocket.close() 
+
+def _toBooleanStr(boolValue):
+    if boolValue:
+        return 'true'
+    return 'false'
+
     
 logging.debug("Creating socket on : "+str(addressCommands[0])+" "+str(addressCommands[1]))
 commandsListener = Listener(addressCommands, 'AF_INET') 
