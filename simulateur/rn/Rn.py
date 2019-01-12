@@ -21,6 +21,7 @@ class Rn:
     MIN_ALPHA = 0.01
     MAX_ALPHA = 1
     LAMBDA = 0.0001
+    NB_EPISODE = 1000
     # how far we consider future reward shall be considered when computing qsa
     # 1 means all future states are inportant (may be divergent)
     # 0 means only the current reward is taken into account
@@ -53,6 +54,7 @@ class Rn:
         self.out = None
         self.saver = None
         self._q_s_a = None
+        self.nb_episode = 0
         self._start()
         
         
@@ -122,6 +124,9 @@ class Rn:
             logging.debug("RN initialized randomly...")
             self.sess.run(tf.global_variables_initializer())
         
+    def startNewGame(self):
+        self.nb_episode += 1
+        
 
     #save model
     def save(self):
@@ -181,7 +186,7 @@ class Rn:
     def _choose_action(self, inputs):
         # exponentially decay the alpha value at each choice
         self._steps += 1
-        self.alpha = self.MIN_ALPHA + (self.MAX_ALPHA - self.MIN_ALPHA) * math.exp(-self.LAMBDA * self._steps)
+        self.alpha = self.alpha - (self.MAX_ALPHA - self.MIN_ALPHA) * math.max(0, 1-self.nb_episode/self.NB_EPISODE)
 
         if random.random() < self.alpha:
             logging.debug("ACTION ALEATOIRE")

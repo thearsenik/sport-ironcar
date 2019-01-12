@@ -72,7 +72,7 @@ stop = False
 gamePlayer = Player.Player()
 
 # On boucle sur les parties... avec le meme Player
-num_episodes = 300
+num_episodes = 200
 try:
     while numGame < num_episodes:
     

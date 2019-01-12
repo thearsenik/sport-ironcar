@@ -24,6 +24,7 @@ class RnController:
         # Store result as previous action choice
         self.previousAction = None
         self.previous_inputs = None
+        self.Rn.startNewGame()
 
     def saveRN(self):
         self.RN.save()
