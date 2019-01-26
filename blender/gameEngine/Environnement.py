@@ -4,7 +4,7 @@ import sys
 sys.path.insert(0, '../simulateur')
 import config
 #import bmesh 
-from mathutils import Vector, Matrix
+#from mathutils import Vector, Matrix
 
 # reload files in blender if they changed
 import importlib
@@ -12,7 +12,7 @@ importlib.reload(config)
 #importlib.reload(moveController)
 
 
-logging.basicConfig(filename=config.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename=config.logFile,level=config.logLevelGameEngine, format='%(asctime)s %(message)s')
 
 
 class Environnement:
@@ -34,7 +34,9 @@ class Environnement:
         self.target_index = 0
         self.totalScore = 0
         self.numGame = 0
+        self.step = 0
         self.roadPoints = []
+        self.scoreObj = None
         self._reset()
         
         
@@ -57,14 +59,15 @@ class Environnement:
         self.numGame += 1
         logging.debug('New game: '+str(self.numGame))
         
+        self.step = 0
         self.reward = self.REWARD_FULL
         self.totalScore = 0
         self.target_index = 0
         
         #get road object
         my_scene = bge.logic.getCurrentScene()
-        # Trouver l'objet "voiture" de cette scene
-        road = my_scene.objects['roadPart']
+        # Trouver l'objet "circuit" de cette scene
+        road = my_scene.objects['roadPart_2']
         
         #logging.debug('ROAD: '+str(dir(road)))
         #logging.debug('meshes len: '+str(len(road.meshes)))
@@ -73,7 +76,7 @@ class Environnement:
         # apply scale and offset to polygons and calculate center of these polygons
         self.roadPoints = []
         point = None
-        pointPrevious = None
+        #pointPrevious = None
         for i in range(road.meshes[0].numPolygons):
             
             polygon = road.meshes[0].getPolygon(i)
@@ -92,6 +95,10 @@ class Environnement:
 
         
         self._initializeVoiturePosition()
+        
+        # initialize score
+        self.scoreObj = my_scene.objects['Score']
+        self.scoreObj['Text'] = str(0)
             
     
     def _stop(self):
@@ -170,6 +177,8 @@ class Environnement:
 		
     # move, render and calculate reward. Say if the game is over
     def next(self, vitesse, direction):
+        
+        self.step +=1
 
        
         #By default no gain
@@ -178,6 +187,7 @@ class Environnement:
         done = False
            
         voiturePoint = self._move(vitesse, direction)
+        logging.info('ENV: position is: '+str(voiturePoint)+' at step '+str(self.step) )
         
         target = self.roadPoints[self.target_index]
         
@@ -190,6 +200,7 @@ class Environnement:
             gain = self.reward
             # reset the reward
             self.reward = self.REWARD_FULL
+            
         else :
             # we decrease the reward every step in order to force the car to reach the 
             # target as soon as possible
@@ -199,14 +210,22 @@ class Environnement:
             if self.reward <= 0:
                 gain = self.GAMEOVER
                 done = True
+                
+        # if we reached the end of the circuit stop the game !
+        if self.target_index == len(self.roadPoints):
+            logging.info('ENV: CIRCUIT TERMINE !!!!!!!!! BRAVO !!!')
+            done = True
         
         # score de la partie
         self.totalScore = self.totalScore + gain
         score = self.totalScore
         
+        #display score
+        self.scoreObj['Text'] = str(score)
+        
         if done:
             
-            logging.debug('ENV: score of the game: '+str(self.totalScore))
+            logging.debug('ENV: GameOver, score of the game '+str(self.numGame)+' : '+str(self.totalScore))
             self._reset()
         # Render
         else :

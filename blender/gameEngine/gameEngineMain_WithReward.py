@@ -12,7 +12,7 @@ import importlib
 importlib.reload(config)
 
 
-logging.basicConfig(filename=config.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename=config.logFile,level=config.logLevelGameEngine, format='%(asctime)s %(message)s')
 
 
 logging.debug("GE : cycle start.")

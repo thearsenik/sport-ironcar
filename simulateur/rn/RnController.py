@@ -7,16 +7,20 @@ sys.path.insert(0, '../')
 import config
 
 
-logging.basicConfig(filename=config.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename=config.logFile,level=config.logLevelPlayer, format='%(asctime)s %(message)s')
 
 class RnController:
 
     NB_ITEM_IN_TRAINING_BATCH = 50
 
 
-    def __init__(self):
-        self.memory = RnMemory.RnMemory(50000)
-        self.RN = Rn.Rn()
+    def __init__(self, playInTrainingMode):
+        self.isTrainingOn = playInTrainingMode
+        if self.isTrainingOn:
+            self.memory = RnMemory.RnMemory(50000)
+        else:
+            self.memory = None
+        self.RN = Rn.Rn(self.isTrainingOn)
         self.previousAction = None
         self.previous_inputs = None
 
@@ -24,7 +28,7 @@ class RnController:
         # Store result as previous action choice
         self.previousAction = None
         self.previous_inputs = None
-        self.Rn.startNewGame()
+        self.RN.startNewGame()
 
     def saveRN(self):
         self.RN.save()
@@ -54,7 +58,11 @@ class RnController:
                 # On ne prend que le dernier pointille de la liste (le plus haut sur l'image)
                 last = len(pointilles)-1
                 # pointille[0] = angle, pointille[1]=distance, pointille[2]=hauteur
-                inputs =  np.array([self._normalizeAngle(pointilles[last][0]), pointilles[last][1], pointilles[last][2]]); 
+                angle = self._normalizeAngle(pointilles[last][0])
+                distance = pointilles[last][1]
+                hauteur = pointilles[last][2]
+                inputs =  np.array([angle, distance, hauteur]); 
+                logging.info('pointille angle='+str(angle)+' distance='+str(distance)+' hauteur='+str(hauteur))
             else:
                 inputs =  np.array([0, 0, 1])
                 
@@ -67,19 +75,20 @@ class RnController:
                     inputs = np.append(inputs, action)
                     
             # store result in memory for batch replay and retrain RN
-            if self.previous_inputs is None:
-                print("previous_inputs is null...")
-            else:
-                # Add to memory: take the new input as the new state (next_state)
-                self.memory.add_sample((self.previous_inputs, self.previousAction, reward, inputs))
-                logging.debug("RnController : addsample "+str((self.previous_inputs, self.previousAction, reward, inputs)))
-                
-                # Modify RN with gradient according to reward
-                self.RN.replay(self.memory.sample(self.NB_ITEM_IN_TRAINING_BATCH))
+            if self.isTrainingOn:
+                if self.previous_inputs is None:
+                    print("previous_inputs is null...")
+                else:
+                    # Add to memory: take the new input as the new state (next_state)
+                    self.memory.add_sample((self.previous_inputs, self.previousAction, reward, inputs))
+                    #logging.debug("RnController : addsample "+str((self.previous_inputs, self.previousAction, reward, inputs)))
+                    
+                    # Modify RN with gradient according to reward
+                    self.RN.replay(self.memory.sample(self.NB_ITEM_IN_TRAINING_BATCH))
             
             # RN compute action to take according to the new input
             action = self.RN.compute(inputs)
-            logging.debug("Action = "+str(action))
+            #logging.debug("Action = "+str(action))
             # Store result as previous action choice
             self.previousAction = action
             # Store input as previous input for next iteration

@@ -7,21 +7,23 @@ import ImageAnalyzer_DottedLine as imageAnalyzer
 import config
 
 
-logging.basicConfig(filename=config.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename=config.logFile,level=config.logLevelPlayer, format='%(asctime)s %(message)s')
 
 class Player:
 
     rotAnglesDegree = (-3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5, 1, 1.5, 2, 2.5, 3)
     
     def __init__(self):
-        self.previousDirection = None
         self.previousRotZIndex = round((len(self.rotAnglesDegree)-1)/2)
-        self.previousRotAngle = 90
-        self.rnController = RnController.RnController()
+        # SET THE VALUE OF THE PARAM TO TRUE TO TRAIN THE RN
+        # SET TO FALSE TO ONLY TEST THE MODEL
+        self.rnController = RnController.RnController(True)
+        
 
         
     def startNewGame(self):
         self.rnController.startNewGame()
+        self.previousRotZIndex = round((len(self.rotAnglesDegree)-1)/2)
         
     def save(self):
         self.rnController.saveRN()
@@ -45,16 +47,14 @@ class Player:
         
         
     def compute(self, reward, frame, numGame, numStep):
-        logging.debug("compute reward"+str(reward))
-        logging.debug("player_Arnaud_forRN : compute start. ")
+        #logging.debug("compute reward"+str(reward))
+        #logging.debug("player_Arnaud_forRN : compute start. ")
         pointilles = imageAnalyzer.getDetection(frame, numGame, numStep)
 
         # angle, distance du centre, hauteur sur l'image birdeye
         vitesse, direction = self._getMove(reward, pointilles)
-            
-        self.previousDirection = direction
 
-        logging.debug("player_Arnaud_forRN : compute end. ")
+        #logging.debug("player_Arnaud_forRN : compute end. ")
         return vitesse, direction
 
     def _sign(self, number):
@@ -65,7 +65,7 @@ class Player:
 
     def _getMove(self, reward, pointilles):
         
-        logging.debug("_getMove reward"+str(reward))
+        #logging.debug("_getMove reward"+str(reward))
         indexVoulu = self.rnController.compute(reward, pointilles)
         
         print('indexVoulu '+str(indexVoulu))
@@ -81,19 +81,28 @@ class Player:
         
         return vitesse, direction
 
-    #Comme en vrai la variation ne peut pas etre instantannee on simule l'inertie de la voiture en
-    #bougeant seulement d'un cran vers l'index suivant en direction de l'indexVoulu.
+    #indexVoulu=0 => gauche toute
+    #indexVoulu=1 => retour vers le tout droit
+    #indexVoulu=2 => droite toute
+    #Mais comme en vrai la variation ne peut pas etre instantannee on simule l'inertie de la voiture en
+    #bougeant seulement d'un cran vers l'index suivant dans la direction voulue.
     def _getRotationAvecInertie(self, indexVoulu):
         index = self.previousRotZIndex
-        if indexVoulu-index > 0:
+        if indexVoulu == 2:
             index +=1
             if index == len(self.rotAnglesDegree):
                 index = len(self.rotAnglesDegree)-1
-        elif indexVoulu-index < 0:
+        elif indexVoulu == 0:
             index -=1
             if index == -1:
                 index = 0
-        #else (indexVoulu=previousIndex) on ne change rien
+        else:
+            if (index - (len(self.rotAnglesDegree)-1)/2 > 0):
+                index -=1
+            elif (index - (len(self.rotAnglesDegree)-1)/2 < 0):
+                index +=1
+            #else: on est deja en train d'aller tout droit, on continu...
+
         
         self.previousRotZIndex = index
         return index 

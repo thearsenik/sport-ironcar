@@ -13,7 +13,7 @@ import codecs
 addressCommands = (config.COMMAND_SERVER, config.COMMAND_PORT)
 addressRender = (config.RENDER_SERVER, config.RENDER_PORT)
 
-logging.basicConfig(filename=config.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename=config.logFile,level=config.logLevelGameEngine, format='%(asctime)s %(message)s')
 
 
 def readCommandFile():

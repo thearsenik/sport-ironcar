@@ -8,7 +8,7 @@ import cv2
 import time
 
 
-logging.basicConfig(filename=config.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename=config.logFile,level=config.logLevelPlayer, format='%(asctime)s %(message)s')
 
 # grab the current frame
 def readImageFromBlender():

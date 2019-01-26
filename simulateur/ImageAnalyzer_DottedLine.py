@@ -15,7 +15,7 @@ previousDistance = 0
 previousHauteur = 0
 NB_ITERATIONS = 10000
 
-logging.basicConfig(filename=config.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename=config.logFile,level=config.logLevelPlayer, format='%(asctime)s %(message)s')
 
 def _detectAngleAndDistance(frame):
     global previousAngle

@@ -1,35 +1,121 @@
 import numpy as np
 import cv2
 
-def remove_noise(img):
-	kernel = np.ones((5,5),np.uint8)
-	erosion = cv2.erode(img,kernel,iterations = 2)
-	dilation = cv2.dilate(erosion,kernel,iterations = 2)
-	return dilation
 
-def grayscale(img):
-    return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+def concat_images(frame1, frame2, axis=0):
+    frameMerge = np.concatenate((frame1, frame2), axis=0)
+    return frameMerge
 
-def getAngle(rect):
-    #if width < height
-    if(rect[1][0] < rect[1][1]):
-        angle = 90 - rect[2]
-    else:
-        angle = -rect[2]
-    return angle
+def concat_videos(
+                     video1,
+                     video2,
+                     outputVideo = '../output/merge2Videos.mp4',
+                     tmpDir = '../output/tmp',
+                     axis=0 #0 vertical, 1 horizontal
+                     ):
+    v1 = cv2.VideoCapture(video1)
+    v2 = cv2.VideoCapture(video2)
+    
+    i=0
+    from PIL import Image
+    while True:
+            # grab the current frame
+            frame1 = v1.read()
+            frame2 = v2.read()
+            frame3 = v3.read()
+        
+            # handle the frame from VideoStream
+            frame1 = frame1[1]
+            frame2 = frame2[1]
+            frame3 = frame3[1]
+        
+            # if we are viewing a video and we did not grab a frame,
+            # then we have reached the end of the video
+            if frame1 is None:
+                break
+            if frame2 is None:
+                break
+            if frame3 is None:
+                break
+        
+            frame = concat_images(frame1, frame2, axis)
+            outputImg = tmpDir+'/'+str(i).zfill(4)+'.jpg'
+            output = Image.fromarray(frame)
+            output.save(outputImg)
+            i = i+1
+            
+    v1.release()
+    v2.release()
+    
+    #make a video from images
+    from moviepy.editor import ImageSequenceClip
+    clip = ImageSequenceClip(tmpDir, fps=24)
+    clip.write_videofile(outputVideo, audio=False)
 
-def perspective_warp(img, 
-                     dst_size=(1280,720),
-                     src=np.float32([(0.43,0.65),(0.58,0.65),(0.1,1),(1,1)]),
-                     dst=np.float32([(0,0), (1, 0), (0,1), (1,1)])):
-    img_size = np.float32([(img.shape[1],img.shape[0])])
-    src = src* img_size
-    # For destination points, I'm arbitrarily choosing some points to be
-    # a nice fit for displaying our warped result 
-    # again, not exact, but close enough for our purposes
-    dst = dst * np.float32(dst_size)
-    # Given src and dst points, calculate the perspective transform matrix
-    M = cv2.getPerspectiveTransform(src, dst)
-    # Warp the image using OpenCV warpPerspective()
-    warped = cv2.warpPerspective(img, M, dst_size)
-    return warped
+    
+    
+    
+def concat_3_videos(
+                     video1,
+                     video2,
+                     video3,
+                     outputVideo = '../output/merge3Videos.mp4',
+                     tmpDir = '../output/tmp',
+                     axis=0 #0 vertical, 1 horizontal
+                     ):
+    v1 = cv2.VideoCapture(video1)
+    v2 = cv2.VideoCapture(video2)
+    v3 = cv2.VideoCapture(video3)
+    
+    i=0
+    from moviepy.editor import ImageClip
+    from PIL import Image
+    while True:
+            # grab the current frame
+            frame1 = v1.read()
+            frame2 = v2.read()
+            frame3 = v3.read()
+        
+            # handle the frame from VideoCapture or VideoStream
+            frame1 = frame1[1]
+            frame2 = frame2[1]
+            frame3 = frame3[1]
+        
+            # if we are viewing a video and we did not grab a frame,
+            # then we have reached the end of the video
+            if frame1 is None:
+                break
+            if frame2 is None:
+                break
+            if frame3 is None:
+                break
+        
+            frame = concat_images(frame1, frame2, axis)
+            frame = concat_images(frame, frame3, axis)
+            outputImg = tmpDir+'/'+str(i).zfill(4)+'.jpg'
+            #imClip = ImageClip(frame)
+            #imClip.
+            output = Image.fromarray(frame)
+            output.save(outputImg)
+            #cv2.imwrite(outputImg, frame)
+            i = i+1
+            
+    v1.release()
+    v2.release()
+    v3.release()
+    
+    #make a video from images
+    from moviepy.editor import ImageSequenceClip
+    clip = ImageSequenceClip(tmpDir, fps=24)
+    clip.write_videofile(outputVideo, audio=False)
+    
+def video_from_imagesDir(dirImages, videoOuputFile):
+    from moviepy.editor import ImageSequenceClip
+    clip = ImageSequenceClip(dirImages, fps=24)
+    clip.write_videofile(videoOuputFile, audio=False)
+    
+def video_from_images(listImagesFiles, videoOuputFile, fps=24):
+    from moviepy.editor import ImageSequenceClip
+    clip = ImageSequenceClip(listImagesFiles, fps)
+    clip.write_videofile(videoOuputFile, audio=False)
+ 

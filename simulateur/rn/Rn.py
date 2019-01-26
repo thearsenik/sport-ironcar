@@ -8,7 +8,7 @@ import random
 import math
 
 
-logging.basicConfig(filename=config.logFile,level=logging.DEBUG)
+logging.basicConfig(filename=config.logFile,level=config.logLevelPlayer, format='%(asctime)s %(message)s')
     
             
 class Rn:
@@ -18,10 +18,10 @@ class Rn:
     Y = 0.95
     # Exploration/exploitation ration (Learning ratio)
     ALPHA = 0.01
-    MIN_ALPHA = 0.01
-    MAX_ALPHA = 1
+    MIN_ALPHA = 0.1
+    MAX_ALPHA = 0.85
     LAMBDA = 0.0001
-    NB_EPISODE = 1000
+    NB_EPISODE = 3000
     # how far we consider future reward shall be considered when computing qsa
     # 1 means all future states are inportant (may be divergent)
     # 0 means only the current reward is taken into account
@@ -33,14 +33,15 @@ class Rn:
     #   6=tout droit (action par defaut)
     #   ...
     #   12=tourne a fond a droite
-    DEFAULT_PREVIOUS_ACTION = [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0]
+    DEFAULT_PREVIOUS_ACTION = [0, 1, 0]
     NB_ACTIONS = len(DEFAULT_PREVIOUS_ACTION)
     
-    DEFAULT_INPUTS = [0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0]
+    DEFAULT_INPUTS = [0, 0, 1, 0, 1, 0]
     NB_INPUTS = len(DEFAULT_INPUTS)
 
 
-    def __init__(self):
+    def __init__(self, performTraining):
+        self.isTrainingOn = performTraining
         self.alpha = 1
         self._steps = 0
         self.V = 0
@@ -54,7 +55,7 @@ class Rn:
         self.out = None
         self.saver = None
         self._q_s_a = None
-        self.nb_episode = 0
+        self.num_episode = 0
         self._start()
         
         
@@ -118,14 +119,16 @@ class Rn:
         # writer = tf.summary.FileWriter('./log/train', self.sess.graph)
         try:
             logging.debug("RN initialized from file :"+config.rnCheckpointsFile)
-            weight_path = open(config.rnCheckpointsFile, 'r')
-            self.saver.restore(self.sess, tf.train.latest_checkpoint(weight_path))
+            weights = open(config.rnCheckpointsFile+'.index', 'r')
+            weights.close
+            self.saver.restore(self.sess, tf.train.latest_checkpoint(config.rnCheckpointsDir))
         except FileNotFoundError:
             logging.debug("RN initialized randomly...")
             self.sess.run(tf.global_variables_initializer())
         
     def startNewGame(self):
-        self.nb_episode += 1
+        self.num_episode += 1
+        self._steps = 0
         
 
     #save model
@@ -186,16 +189,19 @@ class Rn:
     def _choose_action(self, inputs):
         # exponentially decay the alpha value at each choice
         self._steps += 1
-        self.alpha = self.alpha - (self.MAX_ALPHA - self.MIN_ALPHA) * math.max(0, 1-self.nb_episode/self.NB_EPISODE)
+        #alpha = self.MIN_ALPHA + (self.MAX_ALPHA - self.MIN_ALPHA) * max(0, (1-self.num_episode/self.NB_EPISODE))
+        #alpha = 0.1
+        alpha = 0.1 + (0.9) * max(0, (1-self.num_episode/80))
 
-        if random.random() < self.alpha:
-            logging.debug("ACTION ALEATOIRE")
+        logging.debug("alpha="+str(alpha))
+        if self.isTrainingOn and random.random() < alpha:
+            logging.debug("step="+str(self._steps)+" ACTION ALEATOIRE")
             actions = [0]*self.NB_ACTIONS
             choosen_index = random.randint(0, self.NB_ACTIONS - 1)
             actions[choosen_index] = 1
             return np.array(actions)
         else:
-            logging.debug("ACTION CALCULEE")
+            logging.debug("step="+str(self._steps)+" ACTION CALCULEE")
             return self._predict_one(inputs)
         
     def _predict_one(self, inputs):

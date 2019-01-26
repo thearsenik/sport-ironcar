@@ -7,7 +7,8 @@ gameOutputFile='d:/dev/ironcar/ironcarAgfa/sport-ironcar/output/outputRenderer/r
 gamesDir='d:/dev/ironcar/ironcarAgfa/sport-ironcar/output/games/'
 analyzerDebugDir='d:/dev/ironcar/output/debug/png'
 videoDebugDir = "d:/dev/ironcar/output/debug/video"
-rnCheckpointsFile = "d:/dev/ironcar/output/rn/model.ckpt"
+rnCheckpointsDir="d:/dev/ironcar/output/rn"
+rnCheckpointsFile = rnCheckpointsDir+"/model.ckpt"
 carLocation = 'd:/dev/ironcar/ironcarAgfa/sport-ironcar/output/outputRenderer/carLocation.json'
 gameEngineExecutable = "‪d:\\dev\\ironcar\\ironcarAgfa\\sport-ironcar\\blender\\roadGameEngine.exe"
 #VARIABLES
@@ -21,3 +22,15 @@ COMMAND_SERVER='127.0.0.1'
 COMMAND_PORT=6549
 RENDER_SERVER='127.0.0.1'
 RENDER_PORT=6559
+
+#LOG LEVELS
+#CRITICAL = 50
+#FATAL = CRITICAL
+#ERROR = 40
+#WARNING = 30
+#WARN = WARNING
+#INFO = 20
+#DEBUG = 10
+#NOTSET = 0
+logLevelGameEngine=20
+logLevelPlayer=20

@@ -12,7 +12,7 @@ sys.path.insert(0, '../')
 import config
 
 
-logging.basicConfig(filename=config.logFile,level=logging.DEBUG, format='%(asctime)s %(message)s')
+logging.basicConfig(filename=config.logFile,level=config.logLevelPlayer, format='%(asctime)s %(message)s')
 
 addressRender = (config.RENDER_SERVER, config.RENDER_PORT)
 
