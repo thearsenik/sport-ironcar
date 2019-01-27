@@ -118,9 +118,9 @@ class Rn:
         
         # writer = tf.summary.FileWriter('./log/train', self.sess.graph)
         try:
-            logging.debug("RN initialized from file :"+config.rnCheckpointsFile)
             weights = open(config.rnCheckpointsFile+'.index', 'r')
             weights.close
+            logging.debug("RN initialized from file :"+config.rnCheckpointsFile)
             self.saver.restore(self.sess, tf.train.latest_checkpoint(config.rnCheckpointsDir))
         except FileNotFoundError:
             logging.debug("RN initialized randomly...")
