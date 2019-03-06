@@ -36,8 +36,28 @@ class RnController:
     # normalize angle from -1 (0°) to +1 (180°)
     def _normalizeAngle(self, angleInDegrees):
         return (angleInDegrees-90)/90
-                
+    
+    # normalize previous action to be one 1 for the choosen action and 0 for others
+    def _normalizePreviousAction(self):
+        if self.previousAction is None or len(self.previousAction) != self.RN.NB_ACTIONS:
+            return self.RN.DEFAULT_PREVIOUS_ACTION
 
+        else:
+            normalized = np.zeros(len(self.RN.DEFAULT_PREVIOUS_ACTION))
+            normalized[np.argmax(self.previousAction)] = 1
+            return normalized
+                
+    # comme on veut un rn symetrique, on symetrise tout de façon a ce que la
+    # distance soit toujours positive 
+    def _symetrizeInput(self, inputs):
+        if inputs[1] < 0:
+            inputs[0] = -inputs[0]
+            inputs[1] = -inputs[1]
+            # we also inverse previous action
+            if inputs[3] == 1 or inputs[5] == 1:
+                tmp = inputs[3]
+                inputs[3] = inputs[5]
+                inputs[5] = tmp
 
     def compute(self, reward, pointilles):
             
@@ -66,13 +86,12 @@ class RnController:
             else:
                 inputs =  np.array([0, 0, 1])
                 
-            # we add previous action
-            if self.previousAction is None or len(self.previousAction) != self.RN.NB_ACTIONS:
-                for action in self.RN.DEFAULT_PREVIOUS_ACTION:
-                    inputs = np.append(inputs, action)
-            else:
-                for action in self.previousAction:
-                    inputs = np.append(inputs, action)
+            # we add normalized previous action
+            for action in self._normalizePreviousAction():
+                inputs = np.append(inputs, action)
+                
+            # keep distance positive to get rn symetric insensive
+            self._symetrizeInput(inputs)
                     
             # store result in memory for batch replay and retrain RN
             if self.isTrainingOn:

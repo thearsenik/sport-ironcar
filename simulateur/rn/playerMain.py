@@ -76,7 +76,7 @@ maxTotalScore = 440
 
 try:
     #Boucle sur les tests
-    nb_tests = 100
+    nb_tests = 1
     numTest = 0
     while numTest < nb_tests:
         
@@ -87,7 +87,7 @@ try:
         gamePlayer = Player.Player()
         
         # On boucle sur les parties... avec le meme Player
-        nb_episodes = 200
+        nb_episodes = 5000
         while numGame < nb_episodes:
         
             numGame += 1
@@ -122,6 +122,7 @@ try:
                         nb_step_store.append(numStep)
                         # store rn state
                         if totalScore > maxTotalScore:
+                            logging.info('SAVING new HIGHSCORE')
                             maxTotalScore = totalScore
                             gamePlayer.save()
                         # Exit game...

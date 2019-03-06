@@ -2,10 +2,11 @@ import logging
 import sys
 sys.path.insert(0, '../')
 import config
+from tensorflow.python.tools import inspect_checkpoint as chkp
 import tensorflow as tf
 import numpy as np
 import random
-import math
+
 
 
 logging.basicConfig(filename=config.logFile,level=config.logLevelPlayer, format='%(asctime)s %(message)s')
@@ -38,6 +39,8 @@ class Rn:
     
     DEFAULT_INPUTS = [0, 0, 1, 0, 1, 0]
     NB_INPUTS = len(DEFAULT_INPUTS)
+    
+    NB_NEURON_BY_LAYER = NB_INPUTS * 4
 
 
     def __init__(self, performTraining):
@@ -50,9 +53,11 @@ class Rn:
         self.sess = None
         self.optimizer = None
         self.inputs = None
+        self.hidden1 = None
+        self.hidden2 = None
+        self.hidden3 = None
         self.actions = None
         self.rewards = None
-        self.out = None
         self.saver = None
         self._q_s_a = None
         self.num_episode = 0
@@ -72,16 +77,17 @@ class Rn:
         
         #with tf.variable_scope('policy'):
         # trois couches de nb_inputs neurones (autant que d'entrees), fully connected => dense
-        hidden1 = tf.layers.dense(self.inputs, self.NB_INPUTS, activation=tf.nn.relu, kernel_initializer = tf.contrib.layers.xavier_initializer())
-        hidden2 = tf.layers.dense(hidden1, self.NB_INPUTS, activation=tf.nn.relu, kernel_initializer = tf.contrib.layers.xavier_initializer())
-        hidden3 = tf.layers.dense(hidden2, self.NB_INPUTS, activation=tf.nn.relu, kernel_initializer = tf.contrib.layers.xavier_initializer())
+        self.hidden1 = tf.layers.dense(self.inputs, self.NB_NEURON_BY_LAYER, activation=tf.nn.relu, kernel_initializer = tf.contrib.layers.xavier_initializer())
+        self.hidden2 = tf.layers.dense(self.hidden1, self.NB_NEURON_BY_LAYER, activation=tf.nn.relu, kernel_initializer = tf.contrib.layers.xavier_initializer())
+#        self.hidden3 = tf.layers.dense(self.hidden2, self.NB_NEURON_BY_LAYER, activation=tf.nn.relu, kernel_initializer = tf.contrib.layers.xavier_initializer())
         # couche de sortie,  autant que d'actions possibles sans fonction d'activation
-        self.actions = tf.layers.dense(hidden3, self.NB_ACTIONS, activation=None, kernel_initializer = tf.contrib.layers.xavier_initializer())
+        # on voudrait que la sortie colle avec l'esperance de reward ?
+        self.actions = tf.layers.dense(self.hidden2, self.NB_ACTIONS, activation=None, kernel_initializer = tf.contrib.layers.xavier_initializer())
 
         # traitement de la sortie pour avoir que un 1 et des 0       
-        threshold_to_max = tf.less_equal(tf.reduce_max(self.actions), self.actions)
+        #threshold_to_max = tf.less_equal(tf.reduce_max(self.actions), self.actions)
         #cast booleans to float32 (True => 1, False => 0)
-        self.out = tf.cast(threshold_to_max, tf.float32)
+        #self.out = tf.cast(threshold_to_max, tf.float32)
         
 
         # façon de faire originelle:
@@ -93,16 +99,19 @@ class Rn:
         #decay_rate=0.99
         #self.optimizer = tf.train.RMSPropOptimizer(self.ALPHA, decay=decay_rate).minimize(loss)
 
-        tf.summary.histogram("hidden_out", hidden3)
-        tf.summary.histogram("logits_out", self.actions)
-        tf.summary.histogram("prob_out", self.out)
+#        tf.summary.histogram("input_data", self.inputs)
+#        tf.summary.histogram("hidden_1", self.hidden1)
+#        tf.summary.histogram("hidden_2", self.hidden2)
+#        tf.summary.histogram("hidden_3", self.hidden3)
+#        tf.summary.histogram("sortie", self.actions)
+#        tf.summary.histogram("action", self.out)
         merged = tf.summary.merge_all()
         
         self.saver = tf.train.Saver()
 
         # grads = tf.gradients(loss, [hidden_w, logit_w])
         # return pixels, actions, rewards, out, optimizer, merged, grads
-        return self.out, merged
+        return merged
         
         
     
@@ -111,7 +120,7 @@ class Rn:
             self.sess.close()
         
         tf.reset_default_graph()
-        out_sym, merged_sym = self._build_network()
+        merged_sym = self._build_network()
 
         # Init new session with default graph
         self.sess = tf.Session()
@@ -155,7 +164,7 @@ class Rn:
     #    - the reward
     #    - the next state as (new angle, new distance, new height, the action (as flat array of all possible action) that lead to this state (previous action)
     def replay(self, batch):
-        
+            
         states = np.array([val[0] for val in batch])
         notDeterminedNextState = np.zeros(self.NB_INPUTS)
         next_states = np.asarray([(notDeterminedNextState if val[3] is None else val[3]) for val in batch])
@@ -181,6 +190,9 @@ class Rn:
             y[i] = current_q
         self._train_batch(x, y)
         
+        #logging.info("AFTER TRAIN BATCH...")
+        self._log_weights()
+        
         
     # As we are exploring, either get Rn output, either get random output by comparing
     # random value to a predetermined value alpha...
@@ -205,11 +217,32 @@ class Rn:
             return self._predict_one(inputs)
         
     def _predict_one(self, inputs):
-        return self.sess.run(self.out, feed_dict={self.inputs: inputs.reshape(1, self.NB_INPUTS)})
+        logging.info("PREDICT ONE !!!")
+        result = self.sess.run(self.actions, feed_dict={self.inputs: inputs.reshape(1, self.NB_INPUTS)})
+        
+        self._log_weights()
+        #var = [v for v in tf.trainable_variables() if v.name == "hidden1/weights:0"][0]
+        #logging.info("hidden1 : %s" % self.sess.run(self.hidden1.eval())
+        #logging.info("hidden2 : %s" % self.hidden2.eval())
+        #logging.info("hidden3 : %s" % self.hidden3.eval())
+#        logging.info("output : %s" % self.actions.eval())
+        return result
 
     def _predict_batch(self, inputs):
-        return self.sess.run(self.out, feed_dict={self.inputs: np.array(inputs)})
+        #logging.info("PREDICT BATCH !!!")
+        self._log_weights()
+            
+        return self.sess.run(self.actions, feed_dict={self.inputs: np.array(inputs)})
     
     def _train_batch(self, x_batch, y_batch):
+        #logging.info("TRAIN BATCH !!!")
+        self._log_weights()
+            
         return self.sess.run(self._optimizer, feed_dict={self.inputs: x_batch, self._q_s_a: y_batch})
-        
+    
+    def _log_weights(self):
+        if False:
+           for v in tf.trainable_variables():
+               logging.info(v.name+":")
+               logging.info(self.sess.run(v))
+            

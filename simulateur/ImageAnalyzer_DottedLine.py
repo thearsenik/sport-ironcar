@@ -56,7 +56,7 @@ def _detectAngleAndDistance(frame):
     #output = Image.fromarray(thresh)
     #output.save("D:/dev/ironcar/output/thresh.png")
     #logging.debug("ImageAnalyzer : findContours start. ")
-    im2,contours,hierarchy = cv2.findContours(thresh, 1, 2)
+    contours,hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     #logging.debug("ImageAnalyzer : findContours end. ")
     
     #logging.debug("ImageAnalyzer : filtrage contours start. ")

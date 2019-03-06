@@ -62,7 +62,7 @@ class Environnement:
         self.step = 0
         self.reward = self.REWARD_FULL
         self.totalScore = 0
-        self.target_index = 0
+        self.target_index = 3
         
         #get road object
         my_scene = bge.logic.getCurrentScene()
@@ -99,6 +99,7 @@ class Environnement:
         # initialize score
         self.scoreObj = my_scene.objects['Score']
         self.scoreObj['Text'] = str(0)
+        self.scoreObj.resolution = 12
             
     
     def _stop(self):
@@ -201,6 +202,10 @@ class Environnement:
             # reset the reward
             self.reward = self.REWARD_FULL
             
+            # if we reached the end of the circuit stop the game !
+            if self.target_index == len(self.roadPoints):
+                logging.debug('ENV: CIRCUIT TERMINE !!!!!!!!! BRAVO !!!')
+                done = True
         else :
             # we decrease the reward every step in order to force the car to reach the 
             # target as soon as possible
@@ -210,18 +215,14 @@ class Environnement:
             if self.reward <= 0:
                 gain = self.GAMEOVER
                 done = True
-                
-        # if we reached the end of the circuit stop the game !
-        if self.target_index == len(self.roadPoints):
-            logging.info('ENV: CIRCUIT TERMINE !!!!!!!!! BRAVO !!!')
-            done = True
         
         # score de la partie
         self.totalScore = self.totalScore + gain
         score = self.totalScore
         
         #display score
-        self.scoreObj['Text'] = str(score)
+        if gain > 0:
+            self.scoreObj['Text'] = str(score)+' '+str(gain)
         
         if done:
             
