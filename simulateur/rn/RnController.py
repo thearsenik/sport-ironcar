@@ -34,7 +34,10 @@ class RnController:
         self.RN.save()
         
     # normalize angle from -1 (0°) to +1 (180°)
+    # retourne 0 (90°) si 180 ou 0
     def _normalizeAngle(self, angleInDegrees):
+        if angleInDegrees == 0 or angleInDegrees == 180:
+            return 0
         return (angleInDegrees-90)/90
     
     # normalize previous action to be one 1 for the choosen action and 0 for others
@@ -58,6 +61,8 @@ class RnController:
                 tmp = inputs[3]
                 inputs[3] = inputs[5]
                 inputs[5] = tmp
+            return True
+        return False
 
     def compute(self, reward, pointilles):
             
@@ -91,7 +96,7 @@ class RnController:
                 inputs = np.append(inputs, action)
                 
             # keep distance positive to get rn symetric insensive
-            self._symetrizeInput(inputs)
+            inversed = self._symetrizeInput(inputs)
                     
             # store result in memory for batch replay and retrain RN
             if self.isTrainingOn:
@@ -106,7 +111,7 @@ class RnController:
                     self.RN.replay(self.memory.sample(self.NB_ITEM_IN_TRAINING_BATCH))
             
             # RN compute action to take according to the new input
-            action = self.RN.compute(inputs)
+            action, isRandomChoice = self.RN.compute(inputs)
             #logging.debug("Action = "+str(action))
             # Store result as previous action choice
             self.previousAction = action
@@ -116,9 +121,16 @@ class RnController:
             # Get reward
             # convert result to action. Simply return index of the most significant output.
             actionId = np.argmax(action)
+            # but if inputs was inverted we also invert the output
+            if inversed:
+                if actionId == 0:
+                    actionId = 2
+                elif actionId == 2:
+                    actionId = 0
+            
+            logging.info('choosen action id='+str(actionId))
 
-
-            return actionId
+            return actionId, isRandomChoice
 
     
 

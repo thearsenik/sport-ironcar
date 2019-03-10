@@ -52,10 +52,10 @@ class Player:
         pointilles = imageAnalyzer.getDetection(frame, numGame, numStep)
 
         # angle, distance du centre, hauteur sur l'image birdeye
-        vitesse, direction = self._getMove(reward, pointilles)
+        vitesse, direction, isRandomChoice = self._getMove(reward, pointilles)
 
         #logging.debug("player_Arnaud_forRN : compute end. ")
-        return vitesse, direction
+        return vitesse, direction, isRandomChoice
 
     def _sign(self, number):
         if number < 0:
@@ -66,20 +66,22 @@ class Player:
     def _getMove(self, reward, pointilles):
         
         #logging.debug("_getMove reward"+str(reward))
-        indexVoulu = self.rnController.compute(reward, pointilles)
+        indexVoulu, isRandomChoice = self.rnController.compute(reward, pointilles)
         
         print('indexVoulu '+str(indexVoulu))
-        #Comme en vrai la variation ne peut pas etre instantannee on bouge d'un cran vers l'index suivant
-        rotZIndex = self._getRotationAvecInertie(indexVoulu)
-        print('index '+str(rotZIndex))
-        #The rotZIndex is converted to direction by centering 0 value as 0
-        direction = rotZIndex - round((len(self.rotAnglesDegree)-1)/2)
-        #direction = rotZIndex
+        if config.simulateInertie:
+            #Comme en vrai la variation ne peut pas etre instantannee on bouge d'un cran vers l'index suivant
+            rotZIndex = self._getRotationAvecInertie(indexVoulu)
+            print('index '+str(rotZIndex))
+            #The rotZIndex is converted to direction by centering 0 value as 0
+            direction = rotZIndex - round((len(self.rotAnglesDegree)-1)/2)
+        else :
+            direction = indexVoulu - 1
         
         #### Vitesse de deplacement
         vitesse = 2
         
-        return vitesse, direction
+        return vitesse, direction, isRandomChoice
 
     #indexVoulu=0 => gauche toute
     #indexVoulu=1 => retour vers le tout droit

@@ -19,14 +19,17 @@ class Environnement:
 
     REWARD_FULL = 10
     GAMEOVER = -1
-    RAYON = 1.78
+    RAYON = 0.86
     PI_RADIAN = 3.1415/180
     #dict/map of the possible speed values: 5 level of speed including 0 (stop)
     SPEED_VALUES = {"0":0.0, "1": 0.02, "2": 0.08, "3": 0.1, "4": 0.12, "5": 0.16}
     DEFAULT_SPEED = SPEED_VALUES["2"]
     #dict/map of the possible directions values in Pi radians
-    DIRECTION_VALUES = {"-6":-3*PI_RADIAN, "-5": -2.5*PI_RADIAN, "-4": -2*PI_RADIAN,"-3":-1.5*PI_RADIAN, "-2": -1*PI_RADIAN, "-1": -0.5*PI_RADIAN, "0": 0.0, "1": 0.5*PI_RADIAN, "2": 1*PI_RADIAN, "3": 1.5*PI_RADIAN, "4":2*PI_RADIAN, "5":2.5*PI_RADIAN, "6":3*PI_RADIAN}
-        
+    # if inertie is simulated
+    DIRECTION_VALUES_WITH_INERTIE = {"-6":-3*PI_RADIAN, "-5": -2.5*PI_RADIAN, "-4": -2*PI_RADIAN,"-3":-1.5*PI_RADIAN, "-2": -1*PI_RADIAN, "-1": -0.5*PI_RADIAN, "0": 0.0, "1": 0.5*PI_RADIAN, "2": 1*PI_RADIAN, "3": 1.5*PI_RADIAN, "4":2*PI_RADIAN, "5":2.5*PI_RADIAN, "6":3*PI_RADIAN}
+    # else
+    DIRECTION_VALUES = {"-1": -3*PI_RADIAN, "0": 0.0, "1": 3*PI_RADIAN}
+
 
 
     def __init__(self):
@@ -62,7 +65,7 @@ class Environnement:
         self.step = 0
         self.reward = self.REWARD_FULL
         self.totalScore = 0
-        self.target_index = 3
+        self.target_index = 1
         
         #get road object
         my_scene = bge.logic.getCurrentScene()
@@ -100,6 +103,9 @@ class Environnement:
         self.scoreObj = my_scene.objects['Score']
         self.scoreObj['Text'] = str(0)
         self.scoreObj.resolution = 12
+        
+        # initialize target circle
+        self._moveTarget()
             
     
     def _stop(self):
@@ -117,6 +123,13 @@ class Environnement:
         distance2 = self._distance2(point1, point2)
         return distance2 < self.RAYON**2
     
+    # Move the render of the target
+    def _moveTarget(self):
+        newTarget = self.roadPoints[self.target_index]
+        circle = bge.logic.getCurrentScene().objects['Circle']
+        circle.worldPosition = newTarget
+        
+        
     # Move the car
     def _move(self, speedCommand, directionCommand):
         global logging
@@ -128,7 +141,10 @@ class Environnement:
         if (speedCommand):
             speed = self.SPEED_VALUES[speedCommand]
     
-        direction = -self.DIRECTION_VALUES[directionCommand]
+        if config.simulateInertie:
+            direction = -self.DIRECTION_VALUES_WITH_INERTIE[directionCommand]
+        else :
+            direction = -self.DIRECTION_VALUES[directionCommand]
         logging.debug('ENV : rotation : '+str(direction))
 
     
@@ -141,6 +157,15 @@ class Environnement:
         directionAct = cont.actuators["direction"]
         directionAct.dRot = [0.0, 0.0, direction] 
         cont.activate(directionAct)
+        
+#        cont.activate(speedAct)
+#        cont.activate(directionAct)
+#        cont.activate(speedAct)
+#        cont.activate(directionAct)
+#        cont.activate(speedAct)
+#        cont.activate(directionAct)
+#        cont.activate(speedAct)
+#        cont.activate(directionAct)
     
         my_scene = bge.logic.getSceneList()[0]
         # Trouver l'objet "voiture" de cette scene
@@ -206,6 +231,8 @@ class Environnement:
             if self.target_index == len(self.roadPoints):
                 logging.debug('ENV: CIRCUIT TERMINE !!!!!!!!! BRAVO !!!')
                 done = True
+#            else:
+#                self._moveTarget()
         else :
             # we decrease the reward every step in order to force the car to reach the 
             # target as soon as possible
@@ -222,7 +249,7 @@ class Environnement:
         
         #display score
         if gain > 0:
-            self.scoreObj['Text'] = str(score)+' '+str(gain)
+            self.scoreObj['Text'] = str(score)+' '+direction #str(gain)
         
         if done:
             

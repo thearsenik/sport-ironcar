@@ -69,7 +69,9 @@ reward_store = []
 nb_step_store = []
 jsonOutputFile = config.commandFile
 stop = False
-maxTotalScore = 440
+maxTotalScore = 0
+maxGameNb = 0
+minTotalScoreForSaving = 440
 
 
 
@@ -87,7 +89,7 @@ try:
         gamePlayer = Player.Player()
         
         # On boucle sur les parties... avec le meme Player
-        nb_episodes = 5000
+        nb_episodes = 10000
         while numGame < nb_episodes:
         
             numGame += 1
@@ -120,10 +122,14 @@ try:
                         totalScore = data['totalScore']
                         reward_store.append(totalScore)
                         nb_step_store.append(numStep)
-                        # store rn state
                         if totalScore > maxTotalScore:
-                            logging.info('SAVING new HIGHSCORE')
                             maxTotalScore = totalScore
+                            maxGameNb = numGame
+                            logging.info('New high score of '+str(maxTotalScore) + ' for game ' + str(maxGameNb))
+                        # store rn state
+                        if totalScore > minTotalScoreForSaving:
+                            logging.info('SAVING new HIGHSCORE')
+                            minTotalScoreForSaving = totalScore
                             gamePlayer.save()
                         # Exit game...
                         break
@@ -144,9 +150,13 @@ try:
         
                         # get RN result
                         #logging.debug("got reward"+str(reward))
-                        vitesse, direction = gamePlayer.compute(reward, frame, numGame, numStep)     
-                        logging.debug('playerMain : action '+str(direction))
-                        actions.append(direction)
+                        vitesse, direction, isRandomChoice = gamePlayer.compute(reward, frame, numGame, numStep)     
+                        if isRandomChoice:
+                            logging.debug('playerMain : random action '+str(direction))
+                            actions.append(str(direction)+'*')
+                        else:
+                            logging.debug('playerMain : action '+str(direction))
+                            actions.append(str(direction))
         
                         #On ecrit l'action
                         writeCommandFile(vitesse, direction)
@@ -173,8 +183,8 @@ finally:
     #On ecrit l'action stop pour arreter blender
     #writeCommandFile(None, None, True)
     
-    print('maxTotalScore = '+str(maxTotalScore))
-    logging.info('maxTotalScore = '+str(maxTotalScore))
+    print('maxTotalScore = '+str(maxTotalScore) + ' for game ' + str(maxGameNb))
+    logging.info('maxTotalScore = '+str(maxTotalScore) + ' for game ' + str(maxGameNb))
         
     # draw results
     if len(reward_store) < 1000:
@@ -186,6 +196,8 @@ finally:
         plt.title('Nb step')
         plt.plot(nb_step_store)
         plt.show()
+        
+    
     else:
         resultat = []
         for i in range(0, 30):    

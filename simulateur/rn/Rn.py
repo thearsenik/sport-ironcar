@@ -152,9 +152,9 @@ class Rn:
         ##### Traitement RN #####
         # Get the Rn output for the given input
         # In fact, as we are exploring, either get Rn output, either get random output...
-        result = self._choose_action(inputs)
+        result, isRandomChoice = self._choose_action(inputs)
 
-        return result
+        return result, isRandomChoice
     
 
     # Replay a batch to train the nn.
@@ -211,10 +211,10 @@ class Rn:
             actions = [0]*self.NB_ACTIONS
             choosen_index = random.randint(0, self.NB_ACTIONS - 1)
             actions[choosen_index] = 1
-            return np.array(actions)
+            return np.array(actions), True
         else:
             logging.debug("step="+str(self._steps)+" ACTION CALCULEE")
-            return self._predict_one(inputs)
+            return self._predict_one(inputs), False
         
     def _predict_one(self, inputs):
         logging.info("PREDICT ONE !!!")

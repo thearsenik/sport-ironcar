@@ -56,6 +56,11 @@ def _detectAngleAndDistance(frame):
     #output = Image.fromarray(thresh)
     #output.save("D:/dev/ironcar/output/thresh.png")
     #logging.debug("ImageAnalyzer : findContours start. ")
+
+    # contours can be included the one into the others, to get only outer contour
+    # we use RETR_EXTERNAL
+    # if we use CHAIN_APPROX_NONE : all points of the contour are returned
+    # if we use CHAIN_APPROX_SIMPLE : only boundary point are provided
     contours,hierarchy = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     #logging.debug("ImageAnalyzer : findContours end. ")
     
@@ -63,16 +68,21 @@ def _detectAngleAndDistance(frame):
     pointilles = []
     if(len(contours)>0):
         contour = max(contours, key=cv2.contourArea)
+        # minAreaRect returns a Box2D structure which contains 
+        # ( center (x,y), (width, height), angle of rotation ).
         rectMax = cv2.minAreaRect(contour)
         print (rectMax)
         
         
         #contour le plus haut
-        #dont la taille est superieure a max/2 afin de filtrer les bouts de 
-        #pointille qui apparaissent et dont le calcul de l'angle est hazardeux...
+        # //on ne prend que celui dont la taille est superieure a max/2 afin de filtrer les bouts de 
+        # //pointille qui apparaissent et dont le calcul de l'angle est hazardeux...
+        # minAreaRect returns a Box2D structure which contains 
+        # ( center (x,y), (width, height), angle of rotation ).
         rects = [cv2.minAreaRect(forme) for forme in contours]
-        aireMin = rectMax[1][0]*rectMax[1][1]/2
-        contoursEntiers = [rect for rect in rects if rect[1][0]*rect[1][1] >= aireMin]
+        #aireMin = rectMax[1][0]*rectMax[1][1]/2
+        #contoursEntiers = [rect for rect in rects if rect[1][0]*rect[1][1] >= aireMin]
+        contoursEntiers = rects
         contoursBottomToTop = sorted(contoursEntiers, key=lambda rect: rect[0][1], reverse=True)
         #print(str(len(contours))+" contours dont "+str(len(contoursBottomToTop))+" entiers")
         for i, contourRect in enumerate(contoursBottomToTop):
