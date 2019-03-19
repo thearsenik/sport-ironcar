@@ -116,7 +116,7 @@ try:
                         break
                     elif ('done' in data) and (data['done'] == True):
                         print ('GAME OVER...')
-                        logging.info('GAME OVER... '+str(numGame)+' en '+str(numStep)+' steps score='+str(data['totalScore']))
+                        logging.info('GAME OVER... '+str(numGame)+' en '+str(numStep)+' steps score='+str(data['totalScore']) + '  maxTotalScore = '+str(maxTotalScore) + ' for game ' + str(maxGameNb))
                         logging.info('ACTIONS : '+str(actions))
                         # store results
                         totalScore = data['totalScore']
@@ -151,15 +151,17 @@ try:
                         # get RN result
                         #logging.debug("got reward"+str(reward))
                         vitesse, direction, isRandomChoice = gamePlayer.compute(reward, frame, numGame, numStep)     
+                        directionStr = str(direction)
                         if isRandomChoice:
-                            logging.debug('playerMain : random action '+str(direction))
-                            actions.append(str(direction)+'*')
+                            directionStr = directionStr + '*'
+                            logging.debug('playerMain : random action '+directionStr)
+                            actions.append(directionStr)
                         else:
-                            logging.debug('playerMain : action '+str(direction))
-                            actions.append(str(direction))
+                            logging.debug('playerMain : action '+directionStr)
+                            actions.append(directionStr)
         
                         #On ecrit l'action
-                        writeCommandFile(vitesse, direction)
+                        writeCommandFile(vitesse, directionStr)
                         
                         # Wait for result from game engine
                         data = readGameResultFile()

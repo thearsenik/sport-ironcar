@@ -46,7 +46,7 @@ class Rn:
     def __init__(self, performTraining):
         self.isTrainingOn = performTraining
         self.alpha = 1
-        self._steps = 0
+        self.num_step = 0
         self.V = 0
         self.previousAction = self.DEFAULT_PREVIOUS_ACTION
         tf.reset_default_graph()
@@ -61,6 +61,7 @@ class Rn:
         self.saver = None
         self._q_s_a = None
         self.num_episode = 0
+        self.num_step_max = 0
         self._start()
         
         
@@ -137,7 +138,10 @@ class Rn:
         
     def startNewGame(self):
         self.num_episode += 1
-        self._steps = 0
+        if self.num_step > self.num_step_max:
+            self.num_step_max = self.num_step
+        self.num_step = 0
+        
         
 
     #save model
@@ -200,20 +204,26 @@ class Rn:
     # At each step we reduce the probability to choose a random output and reduce alpha value      
     def _choose_action(self, inputs):
         # exponentially decay the alpha value at each choice
-        self._steps += 1
+        self.num_step += 1
         #alpha = self.MIN_ALPHA + (self.MAX_ALPHA - self.MIN_ALPHA) * max(0, (1-self.num_episode/self.NB_EPISODE))
         #alpha = 0.1
-        alpha = 0.1 + (0.9) * max(0, (1-self.num_episode/80))
+        #alpha = 0.1 + (0.9) * max(0, (1-self.num_episode/80))
+        if self.num_step < self.num_step_max - 20:
+            alpha = 0.02
+        #elif self.num_step < self.num_step_max:
+        #    alpha = 0.02 + (0.6) * (self.num_step - (self.num_step_max-80))/80
+        else:
+            alpha = 0.1
 
         logging.debug("alpha="+str(alpha))
         if self.isTrainingOn and random.random() < alpha:
-            logging.debug("step="+str(self._steps)+" ACTION ALEATOIRE")
+            logging.debug("step="+str(self.num_step)+" ACTION ALEATOIRE")
             actions = [0]*self.NB_ACTIONS
             choosen_index = random.randint(0, self.NB_ACTIONS - 1)
             actions[choosen_index] = 1
             return np.array(actions), True
         else:
-            logging.debug("step="+str(self._steps)+" ACTION CALCULEE")
+            logging.debug("step="+str(self.num_step)+" ACTION CALCULEE")
             return self._predict_one(inputs), False
         
     def _predict_one(self, inputs):
