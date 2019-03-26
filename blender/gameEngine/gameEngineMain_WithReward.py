@@ -14,7 +14,7 @@ importlib.reload(config)
 
 logging.basicConfig(filename=config.logFile,level=config.logLevelGameEngine, format='%(asctime)s %(message)s')
 
-
+#print("GE : cycle start.")   
 logging.debug("GE : cycle start.")
 # wait for the socket to receive command file before checking the queue
 time.sleep(0.003)
@@ -27,17 +27,20 @@ if data != None:
      
     if ('stop' in data):
         #Inform that we stopped
-        socketUtil.writeStepResult(None, None, None, True)
+        socketUtil.writeStepResult(None, None, None, None, True)
         #Stop all ('EndGame')
         endGame = cont.actuators[2]
         cont.activate(endGame)
 
     
     # calculate reward for the new position and render
-    reward, totalScore, done = Environnement.instance.next(data["speed"], data["direction"])  
+    #print("GE : calling next")
+    reward, totalScore, done, indexStart = Environnement.instance.next(data["speed"], data["direction"])  
         
     # Write result on socket
-    socketUtil.writeStepResult(reward, totalScore, done)
+    #print("GE : writeStepResult")
+    socketUtil.writeStepResult(reward, totalScore, done, indexStart)
+    #print("GE : end")
 
     
     
@@ -46,5 +49,5 @@ else:
     for actuator in cont.actuators:
         #logging.debug("GE : actuator desactive...")
         cont.deactivate(actuator)
-        
+#print("GE : cycle stop.")
 logging.debug("GE : cycle stop.")

@@ -80,13 +80,14 @@ def writeCarLocationAndRender(car, render, stop=False):
     
     
 
-def writeStepResult(gain, totalScore, done, stop=False):
+def writeStepResult(gain, totalScore, done, indexStart, stop=False):
     global addressRender
     message = None
     if (stop):
         message = '{\"stop\":true}'
     else:
-        message = '{\"reward\":'+str(gain)+', \"done\":'+_toBooleanStr(done)+', \"totalScore\":'+str(totalScore)+'}'
+        message = '{\"reward\":'+str(gain)+', \"done\":'+_toBooleanStr(done)+', \"totalScore\":'+str(totalScore)+', \"indexStart\":'+str(indexStart)+'}'
+    #print("GE output message :"+message)   
     logging.debug("GE output message :"+message)    
     clientSocket = Client(addressRender, 'AF_INET')
     clientSocket.send(message)

@@ -21,8 +21,8 @@ class Player:
         
 
         
-    def startNewGame(self):
-        self.rnController.startNewGame()
+    def startNewGame(self, startIndex):
+        self.rnController.startNewGame(startIndex)
         self.previousRotZIndex = round((len(self.rotAnglesDegree)-1)/2)
         
     def save(self):

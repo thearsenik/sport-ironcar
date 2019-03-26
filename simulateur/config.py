@@ -5,6 +5,7 @@ detectionFile='d:/dev/ironcar/sport-ironcar/output/outputAnalyser/detection.json
 commandFile='d:/dev/ironcar/sport-ironcar/output/outputAnalyser/command.json'
 gameOutputFile='d:/dev/ironcar/sport-ironcar/output/outputRenderer/result.json'
 gamesDir='d:/dev/ironcar/sport-ironcar/output/games/'
+debugDir='d:/dev/ironcar/output/debug'
 analyzerDebugDir='d:/dev/ironcar/output/debug/png'
 videoDebugDir = "d:/dev/ironcar/output/debug/video"
 rnCheckpointsDir="d:/dev/ironcar/output/rn"

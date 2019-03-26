@@ -26,7 +26,9 @@ class Rn:
     # how far we consider future reward shall be considered when computing qsa
     # 1 means all future states are inportant (may be divergent)
     # 0 means only the current reward is taken into account
-    GAMMA = 0.99
+    # 0.9363 means 70th step after has less than 1% influence
+    # 0.99 means 460th step after has less than 1% influence
+    GAMMA = 0.9363
     # 13 actions possibles:
     # ---------------------
     #   0=tourne a fond a gauche
@@ -62,6 +64,7 @@ class Rn:
         self._q_s_a = None
         self.num_episode = 0
         self.num_step_max = 0
+        self.previousStartIndex = 0
         self._start()
         
         
@@ -136,12 +139,15 @@ class Rn:
             logging.debug("RN initialized randomly...")
             self.sess.run(tf.global_variables_initializer())
         
-    def startNewGame(self):
+    def startNewGame(self, startIndex):
         self.num_episode += 1
         if self.num_step > self.num_step_max:
             self.num_step_max = self.num_step
-        self.num_step = 0
-        
+        self.num_step = startIndex
+        # on reevalue numstepmax a chaque changement de startIndex
+        if self.previousStartIndex != startIndex:
+            self.previousStartIndex = startIndex
+            self.num_step_max = 40
         
 
     #save model

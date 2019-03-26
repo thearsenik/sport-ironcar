@@ -1,6 +1,8 @@
 import time
 import logging
+import numpy
 import sys
+import matplotlib
 sys.path.insert(0, '../')
 import commonSocket as sock
 import socket
@@ -103,9 +105,12 @@ try:
             data = readGameResultFile() 
             noImgCounter = 0
             actions = []
+            startIndex = 0
+            if ('startIndex' in data):
+                startIndex = data['startIndex']
             
             #reset RN
-            gamePlayer.startNewGame()
+            gamePlayer.startNewGame(startIndex)
             
             while True:
                 
@@ -189,26 +194,24 @@ finally:
     logging.info('maxTotalScore = '+str(maxTotalScore) + ' for game ' + str(maxGameNb))
         
     # draw results
-    if len(reward_store) < 1000:
-        import matplotlib.pylab as plt
-        plt.title('Total Score')
-        plt.plot(reward_store)
-        plt.show()
-        plt.close("all")
-        plt.title('Nb step')
-        plt.plot(nb_step_store)
-        plt.show()
+    fig = matplotlib.pyplot.gcf()
+    fig.set_size_inches(100, 10.5)
+    fig.suptitle('Total Score')
+    ax = matplotlib.pyplot.gca()
+    ax.xaxis.set_major_locator(matplotlib.pyplot.MultipleLocator(200))
+    #ax.xaxis.set_minor_locator(matplotlib.pyplot.MultipleLocator(200))
+    matplotlib.pyplot.scatter(numpy.arange(len(reward_store)), reward_store)
+    fig.savefig(config.debugDir+'/result.png', dpi=100)
         
     
-    else:
-        resultat = []
-        for i in range(0, 30):    
-            nb = len([ val for val in reward_store if val>=i*100 and val<(i+1)*100 ])
-            resultat.append(nb)
-        import matplotlib.pylab as plt
-        plt.title('Repartition des scores')
-        plt.plot(resultat)
-        plt.show()
+    resultat = []
+    for i in range(0, 30):    
+        nb = len([ val for val in reward_store if val>=i*100 and val<(i+1)*100 ])
+        resultat.append(nb)
+    import matplotlib.pylab as plt
+    plt.title('Repartition des scores')
+    plt.plot(resultat)
+    plt.show()
     # write results
 
     

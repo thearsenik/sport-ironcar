@@ -24,11 +24,11 @@ class RnController:
         self.previousAction = None
         self.previous_inputs = None
 
-    def startNewGame(self):
+    def startNewGame(self, startIndex):
         # Store result as previous action choice
         self.previousAction = None
         self.previous_inputs = None
-        self.RN.startNewGame()
+        self.RN.startNewGame(startIndex)
 
     def saveRN(self):
         self.RN.save()
@@ -89,7 +89,11 @@ class RnController:
                 inputs =  np.array([angle, distance, hauteur]); 
                 logging.info('pointille angle='+str(angle)+' distance='+str(distance)+' hauteur='+str(hauteur))
             else:
-                inputs =  np.array([0, 0, 1])
+                if self.previous_inputs is None:
+                    inputs =  np.array([0, 0, 1])
+                else:
+                    inputs =  np.array([self.previous_inputs[0], self.previous_inputs[1], self.previous_inputs[2]])
+                    
                 
             # we add normalized previous action
             for action in self._normalizePreviousAction():

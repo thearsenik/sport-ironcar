@@ -19,7 +19,7 @@ logging.basicConfig(filename=config.logFile,level=config.logLevelGameEngine, for
 class Environnement:
 
     REWARD_FULL = 10
-    GAMEOVER = -1
+    GAMEOVER = -10
     RAYON = 0.86
     PI_RADIAN = 3.1415/180
     #dict/map of the possible speed values: 5 level of speed including 0 (stop)
@@ -47,6 +47,7 @@ class Environnement:
         self.roadPoints = []
         self.roadPointsRotation = []
         self.startingPointIndex = 0
+        self.previousAngle = None
         self.scoreObj = None
         self._reset()
         
@@ -71,12 +72,12 @@ class Environnement:
         self.numGame += 1
         if self.numGame % self.NB_ITERATION_BY_STARTING_POINT  == 0:
             self._nextStartingPoint()
-#        logging.info('New game: '+str(self.numGame)+' starting index ='+str(self.startingPointIndex))
+        logging.info('New game: '+str(self.numGame)+' starting index ='+str(self.startingPointIndex))
         
         self.step = 0
         self.reward = self.REWARD_FULL
         self.totalScore = 0
-        self.target_index = 1
+        self.target_index = self.startingPointIndex+1
         
         #get road object
         my_scene = bge.logic.getCurrentScene()
@@ -92,6 +93,7 @@ class Environnement:
         self.roadPointsRotation = []
         point = None
         #pointPrevious = None
+        self.previousAngle = None
         for i in range(road.meshes[0].numPolygons):
             
             polygon = road.meshes[0].getPolygon(i)
@@ -103,6 +105,7 @@ class Environnement:
 #            pointPrevious = point
             point = self._calculateCenter(polygon, road.meshes[0])
             point = (point[0]*0.324+3.54, point[1]*0.892+0.778866, 0.348387)
+            logging.debug('POINT : '+str(point[0])+' '+str(point[1]))
             self.roadPoints.append(point)
             rotation = self._calculateRotation(polygon, road.meshes[0])
             self.roadPointsRotation.append((0,0,rotation))
@@ -121,9 +124,9 @@ class Environnement:
         self.scoreObj.resolution = 12
         
         # initialize target circle
-        #self._moveTarget()
-            
-    
+#        self._moveTargetCircle()
+
+        
     def _stop(self):
         #nothing to do...
         logging.debug('Env: stop')
@@ -140,10 +143,10 @@ class Environnement:
         return distance2 < self.RAYON**2
     
     # Move the render of the target
-#    def _moveTarget(self):
-#        newTarget = self.roadPoints[self.target_index]
-#        circle = bge.logic.getCurrentScene().objects['Circle']
-#        circle.worldPosition = newTarget
+    def _moveTargetCircle(self):
+        newTarget = self.roadPoints[self.target_index]
+        circle = bge.logic.getCurrentScene().objects['Circle']
+        circle.worldPosition = newTarget
         
     # Calculate and set index of the next place to start the game at
     def _nextStartingPoint(self):
@@ -167,7 +170,8 @@ class Environnement:
         else :
             direction = -self.DIRECTION_VALUES[directionCommand]
         logging.debug('ENV : rotation : '+str(direction))
-
+        
+#        direction = -3*self.PI_RADIAN
     
         #here we use "minus" before speed value so that users of the simulator don't have to take
         #care of the camera's orientation in its local space
@@ -201,18 +205,50 @@ class Environnement:
         
     def _calculateRotation(self, polygon, vertexs):
 
-        milieu_x1 = (vertexs.getVertex(0, polygon.v1).x + vertexs.getVertex(0, polygon.v4).x)/2
-        milieu_y1 = (vertexs.getVertex(0, polygon.v1).y + vertexs.getVertex(0, polygon.v4).y)/2
+        milieu_x1 = (vertexs.getVertex(0, polygon.v1).x + vertexs.getVertex(0, polygon.v3).x)/2
+        milieu_y1 = (vertexs.getVertex(0, polygon.v1).y + vertexs.getVertex(0, polygon.v3).y)/2
         
-        milieu_x2 = (vertexs.getVertex(0, polygon.v3).x + vertexs.getVertex(0, polygon.v2).x)/2
-        milieu_y2 = (vertexs.getVertex(0, polygon.v3).y + vertexs.getVertex(0, polygon.v2).y)/2
+        milieu_x2 = (vertexs.getVertex(0, polygon.v2).x + vertexs.getVertex(0, polygon.v4).x)/2
+        milieu_y2 = (vertexs.getVertex(0, polygon.v2).y + vertexs.getVertex(0, polygon.v4).y)/2
         
         longueur = sqrt( ((milieu_x2 - milieu_x1)*0.324)**2 + ((milieu_y2 - milieu_y1)*0.892)**2 )
-        angle = acos((milieu_x2 - milieu_x1)*0.324/longueur)
+        angle = degrees(acos((milieu_x2 - milieu_x1)*0.324/longueur))
         
-        logging.info('ANGLE : '+str(angle))
+        #logging.debug('milieu 1 : '+str(milieu_x1)+' '+str(milieu_y1))
+        #logging.debug('milieu 2 : '+str(milieu_x2)+' '+str(milieu_y2))
+        #logging.debug('Delta : '+str(milieu_x2 - milieu_x1)+' '+str(milieu_y2 - milieu_y1))
+        
+        
+        if milieu_y2 - milieu_y1 > 0:
+            if milieu_x2 - milieu_x1 > 0:
+                angle = angle -225 +180
+                logging.debug('CAS1')
+            else:
+                angle = angle -225 +180
+                logging.debug('CAS2')
+        else:
+            if milieu_x2 - milieu_x1 > 0:
+                angle = -angle -225 +180
+                logging.debug('CAS3')
+            else:
+                angle = -angle -225
+                logging.debug('CAS4')
+        
+        if self.previousAngle == None:
+            self.previousAngle = angle
+        else:
+            delta = abs(angle%360 - self.previousAngle%360)
+            #logging.debug('angle : '+str(angle%360))
+            #logging.debug('previousAngle : '+str(self.previousAngle%360))
+            #logging.debug('diff : '+str( delta ))
+            if delta > 50 and delta < 310:
+                angle = (angle + 180)
+            self.previousAngle = angle
             
-        return angle
+        angle = angle%360
+        logging.debug('ANGLE : '+str(angle))
+            
+        return radians(angle)
     
 
     def _calculateCenter(self, polygon, vertexs):
@@ -221,8 +257,8 @@ class Environnement:
         sx = vertexs.getVertex(0, polygon.v1).x + vertexs.getVertex(0, polygon.v2).x + vertexs.getVertex(0, polygon.v3).x
         sy = vertexs.getVertex(0, polygon.v1).y + vertexs.getVertex(0, polygon.v2).y + vertexs.getVertex(0, polygon.v3).y
         sz = vertexs.getVertex(0, polygon.v1).z + vertexs.getVertex(0, polygon.v2).z + vertexs.getVertex(0, polygon.v3).z
- #       logging.debug('ENV: addind x : '+str(vertexs.getVertex(0, polygon.v1).x*0.324)+' '+str(vertexs.getVertex(0, polygon.v2).x*0.324)+' '+str(vertexs.getVertex(0, polygon.v3).x*0.324))
- #       logging.debug('ENV: addind y : '+str(vertexs.getVertex(0, polygon.v1).y*0.892)+' '+str(vertexs.getVertex(0, polygon.v2).y*0.892)+' '+str(vertexs.getVertex(0, polygon.v3).y*0.892))
+        logging.debug('ENV: addind x : '+str(vertexs.getVertex(0, polygon.v1).x*0.324)+' '+str(vertexs.getVertex(0, polygon.v2).x*0.324)+' '+str(vertexs.getVertex(0, polygon.v3).x*0.324))
+        logging.debug('ENV: addind y : '+str(vertexs.getVertex(0, polygon.v1).y*0.892)+' '+str(vertexs.getVertex(0, polygon.v2).y*0.892)+' '+str(vertexs.getVertex(0, polygon.v3).y*0.892))
  #       logging.debug('ENV: addind z : '+str(vertexs.getVertex(0, polygon.v1).z)+' '+str(vertexs.getVertex(0, polygon.v2).z)+' '+str(vertexs.getVertex(0, polygon.v3).z))
         
         if polygon.v4 != 0:
@@ -230,8 +266,8 @@ class Environnement:
             sx = sx + vertexs.getVertex(0, polygon.v4).x
             sy = sy + vertexs.getVertex(0, polygon.v4).y
             sz = sz + vertexs.getVertex(0, polygon.v4).z
- #           logging.debug('ENV: addind 4e x : '+str(vertexs.getVertex(0, polygon.v4).x*0.324))
- #           logging.debug('ENV: addind 4e y : '+str(vertexs.getVertex(0, polygon.v4).y*0.892))
+            logging.debug('ENV: addind 4e x : '+str(vertexs.getVertex(0, polygon.v4).x*0.324))
+            logging.debug('ENV: addind 4e y : '+str(vertexs.getVertex(0, polygon.v4).y*0.892))
  #           logging.debug('ENV: addind 4e z : '+str(vertexs.getVertex(0, polygon.v4).z))
         else:
              logging.debug('POINT A 3 VERTEX !!!!!')
@@ -249,9 +285,10 @@ class Environnement:
         gain = 0
         score = 0
         done = False
+        loose = False
            
         voiturePoint = self._move(vitesse, direction)
-        logging.info('ENV: position is: '+str(voiturePoint)+' at step '+str(self.step) )
+        logging.debug('ENV: position is: '+str(voiturePoint)+' at step '+str(self.step) )
         
         target = self.roadPoints[self.target_index]
         
@@ -267,7 +304,7 @@ class Environnement:
             
             # if we reached the end of the circuit stop the game !
             if self.target_index == len(self.roadPoints):
-                logging.debug('ENV: CIRCUIT TERMINE !!!!!!!!! BRAVO !!!')
+                logging.info('ENV: CIRCUIT TERMINE !!!!!!!!! BRAVO !!!')
                 done = True
 #            else:
 #                self._moveTarget()
@@ -279,7 +316,7 @@ class Environnement:
             # if the target is still not reached, the game is over (-1)
             if self.reward <= 0:
                 gain = self.GAMEOVER
-                done = True
+                loose = True
         
         # score de la partie
         self.totalScore = self.totalScore + gain
@@ -291,9 +328,15 @@ class Environnement:
         self.scoreObj['Text'] = str(score)+' '+direction
         
         if done:
-            
+            logging.debug('ENV: WIN !!! '+str(self.numGame)+' : '+str(self.totalScore))
+            # come back to the beginning
+            self.startingPointIndex = 0
+            self._reset()
+        if loose:
             logging.debug('ENV: GameOver, score of the game '+str(self.numGame)+' : '+str(self.totalScore))
             self._reset()
+            done = True
+
         # Render
         else :
             self._render()
@@ -301,7 +344,7 @@ class Environnement:
         
         
                 
-        return gain, score, done
+        return gain, score, done, self.startingPointIndex
 
 
 
