@@ -71,7 +71,7 @@ def _detectAngleAndDistance(frame):
         # minAreaRect returns a Box2D structure which contains 
         # ( center (x,y), (width, height), angle of rotation ).
         rectMax = cv2.minAreaRect(contour)
-        print (rectMax)
+        #print (rectMax)
         
         
         #contour le plus haut
@@ -99,6 +99,9 @@ def _detectAngleAndDistance(frame):
                 cv2.drawContours(vueDessus,[box], 0,(0,max(255-i*60, 0),min(i*60, 255)),2)
                 cv2.putText(vueDessus, str(angle),(vueDessus.shape[1] - 120, vueDessus.shape[0] - 60*i-10), font, 1,(0,max(255-i*60, 0),min(i*60, 255)),2,cv2.LINE_AA)
 
+        print('contour utilise = ')
+        print(contoursBottomToTop[len(contoursBottomToTop)-1])
+        
     #logging.debug("ImageAnalyzer : filtrage contours end. ")
     return vueDessus, pointilles
 

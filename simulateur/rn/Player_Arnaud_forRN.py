@@ -17,7 +17,7 @@ class Player:
         self.previousRotZIndex = round((len(self.rotAnglesDegree)-1)/2)
         # SET THE VALUE OF THE PARAM TO TRUE TO TRAIN THE RN
         # SET TO FALSE TO ONLY TEST THE MODEL
-        self.rnController = RnController.RnController(True)
+        self.rnController = RnController.RnController(config.TRAIN_RN)
         
 
         
@@ -49,7 +49,9 @@ class Player:
     def compute(self, reward, frame, numGame, numStep):
         #logging.debug("compute reward"+str(reward))
         #logging.debug("player_Arnaud_forRN : compute start. ")
-        pointilles = imageAnalyzer.getDetection(frame, numGame, numStep)
+        pointilles = None
+        if frame is not None:
+            pointilles = imageAnalyzer.getDetection(frame, numGame, numStep)
 
         # angle, distance du centre, hauteur sur l'image birdeye
         vitesse, direction, isRandomChoice = self._getMove(reward, pointilles)
@@ -68,7 +70,7 @@ class Player:
         #logging.debug("_getMove reward"+str(reward))
         indexVoulu, isRandomChoice = self.rnController.compute(reward, pointilles)
         
-        print('indexVoulu '+str(indexVoulu))
+        #print('indexVoulu '+str(indexVoulu))
         if config.simulateInertie:
             #Comme en vrai la variation ne peut pas etre instantannee on bouge d'un cran vers l'index suivant
             rotZIndex = self._getRotationAvecInertie(indexVoulu)
@@ -76,6 +78,7 @@ class Player:
             #The rotZIndex is converted to direction by centering 0 value as 0
             direction = rotZIndex - round((len(self.rotAnglesDegree)-1)/2)
         else :
+            # -1 gauche, 0 tout droit, 1 droite
             direction = indexVoulu - 1
         
         #### Vitesse de deplacement

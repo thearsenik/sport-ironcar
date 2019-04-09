@@ -113,7 +113,7 @@ try:
             gamePlayer.startNewGame(startIndex)
             
             while True:
-                
+                    reward = data['reward']
                     if ('stop' in data):
                         print("STOP...")
                         logging.debug("STOP...")
@@ -136,10 +136,13 @@ try:
                             logging.info('SAVING new HIGHSCORE')
                             minTotalScoreForSaving = totalScore
                             gamePlayer.save()
+                            
+                        # Store reward into RN memory
+                        gamePlayer.compute(reward, None, numGame, numStep)
+                        
                         # Exit game...
                         break
                     
-                    reward = data['reward']
                     frame = input.readImageFromBlender()
                     if frame is None:
                         noImgCounter = noImgCounter+1

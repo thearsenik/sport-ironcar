@@ -242,7 +242,7 @@ class Rn:
         #logging.info("hidden2 : %s" % self.hidden2.eval())
         #logging.info("hidden3 : %s" % self.hidden3.eval())
 #        logging.info("output : %s" % self.actions.eval())
-        return result
+        return result[0]
 
     def _predict_batch(self, inputs):
         #logging.info("PREDICT BATCH !!!")

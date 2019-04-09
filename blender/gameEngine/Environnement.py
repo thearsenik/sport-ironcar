@@ -171,7 +171,7 @@ class Environnement:
             direction = -self.DIRECTION_VALUES[directionCommand]
         logging.debug('ENV : rotation : '+str(direction))
         
-#        direction = -3*self.PI_RADIAN
+#        direction = 3*self.PI_RADIAN
     
         #here we use "minus" before speed value so that users of the simulator don't have to take
         #care of the camera's orientation in its local space
@@ -259,7 +259,7 @@ class Environnement:
         sz = vertexs.getVertex(0, polygon.v1).z + vertexs.getVertex(0, polygon.v2).z + vertexs.getVertex(0, polygon.v3).z
         logging.debug('ENV: addind x : '+str(vertexs.getVertex(0, polygon.v1).x*0.324)+' '+str(vertexs.getVertex(0, polygon.v2).x*0.324)+' '+str(vertexs.getVertex(0, polygon.v3).x*0.324))
         logging.debug('ENV: addind y : '+str(vertexs.getVertex(0, polygon.v1).y*0.892)+' '+str(vertexs.getVertex(0, polygon.v2).y*0.892)+' '+str(vertexs.getVertex(0, polygon.v3).y*0.892))
- #       logging.debug('ENV: addind z : '+str(vertexs.getVertex(0, polygon.v1).z)+' '+str(vertexs.getVertex(0, polygon.v2).z)+' '+str(vertexs.getVertex(0, polygon.v3).z))
+        #logging.debug('ENV: addind z : '+str(vertexs.getVertex(0, polygon.v1).z)+' '+str(vertexs.getVertex(0, polygon.v2).z)+' '+str(vertexs.getVertex(0, polygon.v3).z))
         
         if polygon.v4 != 0:
             nbPoints = 4
@@ -268,7 +268,7 @@ class Environnement:
             sz = sz + vertexs.getVertex(0, polygon.v4).z
             logging.debug('ENV: addind 4e x : '+str(vertexs.getVertex(0, polygon.v4).x*0.324))
             logging.debug('ENV: addind 4e y : '+str(vertexs.getVertex(0, polygon.v4).y*0.892))
- #           logging.debug('ENV: addind 4e z : '+str(vertexs.getVertex(0, polygon.v4).z))
+            #logging.debug('ENV: addind 4e z : '+str(vertexs.getVertex(0, polygon.v4).z))
         else:
              logging.debug('POINT A 3 VERTEX !!!!!')
             

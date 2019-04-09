@@ -14,6 +14,7 @@ carLocation = 'd:/dev/ironcar/sport-ironcar/output/outputRenderer/carLocation.js
 gameEngineExecutable = "‪d:\\dev\\ironcar\\ironcarAgfa\\sport-ironcar\\blender\\roadGameEngine.exe"
 #VARIABLES
 PRODUCE_DEBUG_IMG = True
+TRAIN_RN = True
 #IMG_WIDTH=200
 #IMG_HEIGHT=150
 IMG_WIDTH=304
