@@ -74,7 +74,7 @@ stop = False
 maxTotalScore = 0
 maxGameNb = 0
 minTotalScoreForSaving = 440
-
+GAME_MAX_SCORE = 2600
 
 
 
@@ -132,7 +132,7 @@ try:
                             maxGameNb = numGame
                             logging.info('New high score of '+str(maxTotalScore) + ' for game ' + str(maxGameNb))
                         # store rn state
-                        if totalScore > minTotalScoreForSaving:
+                        if totalScore > minTotalScoreForSaving or totalScore > GAME_MAX_SCORE:
                             logging.info('SAVING new HIGHSCORE')
                             minTotalScoreForSaving = totalScore
                             gamePlayer.save()
@@ -158,7 +158,7 @@ try:
         
                         # get RN result
                         #logging.debug("got reward"+str(reward))
-                        vitesse, direction, isRandomChoice = gamePlayer.compute(reward, frame, numGame, numStep)     
+                        vitesse, direction, isRandomChoice, outOfRoad = gamePlayer.compute(reward, frame, numGame, numStep)     
                         directionStr = str(direction)
                         if isRandomChoice:
                             directionStr = directionStr + '*'

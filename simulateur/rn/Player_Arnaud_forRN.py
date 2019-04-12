@@ -18,6 +18,7 @@ class Player:
         # SET THE VALUE OF THE PARAM TO TRUE TO TRAIN THE RN
         # SET TO FALSE TO ONLY TEST THE MODEL
         self.rnController = RnController.RnController(config.TRAIN_RN)
+        self.previousPointilles = [];
         
 
         
@@ -50,14 +51,15 @@ class Player:
         #logging.debug("compute reward"+str(reward))
         #logging.debug("player_Arnaud_forRN : compute start. ")
         pointilles = None
+        # frame is None when we loose... but we go on to train RN with last step result
         if frame is not None:
             pointilles = imageAnalyzer.getDetection(frame, numGame, numStep)
 
         # angle, distance du centre, hauteur sur l'image birdeye
-        vitesse, direction, isRandomChoice = self._getMove(reward, pointilles)
+        vitesse, direction, isRandomChoice, outOfRoad = self._getMove(reward, pointilles)
 
         #logging.debug("player_Arnaud_forRN : compute end. ")
-        return vitesse, direction, isRandomChoice
+        return vitesse, direction, isRandomChoice, outOfRoad
 
     def _sign(self, number):
         if number < 0:
@@ -66,6 +68,11 @@ class Player:
 
 
     def _getMove(self, reward, pointilles):
+        
+        if pointilles is not None and len(pointilles) == 0:
+            pointilles = self.previousPointilles
+        
+        self.previousPointilles = pointilles
         
         #logging.debug("_getMove reward"+str(reward))
         indexVoulu, isRandomChoice = self.rnController.compute(reward, pointilles)
@@ -84,7 +91,12 @@ class Player:
         #### Vitesse de deplacement
         vitesse = 2
         
-        return vitesse, direction, isRandomChoice
+        return vitesse, direction, isRandomChoice, False
+            
+#        else:
+#            # We loose the dotted line, stop the game...
+#            return 0, 0, False, True
+        
 
     #indexVoulu=0 => gauche toute
     #indexVoulu=1 => retour vers le tout droit

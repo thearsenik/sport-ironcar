@@ -152,7 +152,7 @@ class Rn:
 
     #save model
     def save(self):
-        self.saver.save(self.sess, config.rnCheckpointsFile)
+        self.saver.save(self.sess, config.rnCheckpointsFile+"_"+str(self.num_episode)+".ckpt")
         
     # method used to process a new state provided by the environment
     def compute(self, inputs):
@@ -233,7 +233,7 @@ class Rn:
             return self._predict_one(inputs), False
         
     def _predict_one(self, inputs):
-        logging.info("PREDICT ONE !!!")
+        logging.debug("PREDICT ONE !!!")
         result = self.sess.run(self.actions, feed_dict={self.inputs: inputs.reshape(1, self.NB_INPUTS)})
         
         self._log_weights()

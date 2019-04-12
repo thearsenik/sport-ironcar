@@ -9,7 +9,7 @@ debugDir='d:/dev/ironcar/output/debug'
 analyzerDebugDir='d:/dev/ironcar/output/debug/png'
 videoDebugDir = "d:/dev/ironcar/output/debug/video"
 rnCheckpointsDir="d:/dev/ironcar/output/rn"
-rnCheckpointsFile = rnCheckpointsDir+"/model.ckpt"
+rnCheckpointsFile = rnCheckpointsDir+"/model"
 carLocation = 'd:/dev/ironcar/sport-ironcar/output/outputRenderer/carLocation.json'
 gameEngineExecutable = "‪d:\\dev\\ironcar\\ironcarAgfa\\sport-ironcar\\blender\\roadGameEngine.exe"
 #VARIABLES

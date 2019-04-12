@@ -78,6 +78,8 @@ class RnController:
             # was action n previously selected
             inputs = None
             
+            outOfRoad = False
+            
             if pointilles is None:
                 # On a perdu...
                 if self.isTrainingOn:
@@ -96,6 +98,7 @@ class RnController:
                     
                 
             elif len(pointilles) > 0:
+                print('on a au moins un pointille')
                 # On ne prend que le dernier pointille de la liste (le plus haut sur l'image)
                 last = len(pointilles)-1
                 # pointille[0] = angle, pointille[1]=distance, pointille[2]=hauteur
@@ -103,7 +106,7 @@ class RnController:
                 distance = pointilles[last][1]
                 hauteur = pointilles[last][2]
                 inputs =  np.array([angle, distance, hauteur]); 
-                logging.info('pointille angle='+str(angle)+' distance='+str(distance)+' hauteur='+str(hauteur))
+                logging.debug('pointille angle='+str(angle)+' distance='+str(distance)+' hauteur='+str(hauteur))
             else:
                 # Pas de pointilles !!!
                 if self.previous_inputs is None:
@@ -112,12 +115,9 @@ class RnController:
                     print('No dot, first step')
                 else:
                     # Gloups ! Sortie de route !
-                    # On remet l'input precedente pour forcer a prendre la
-                    # meme sortie... Ah... et pourquoi ne pas la retourner directement ?
-                    inputs =  np.array([self.previous_inputs[0], self.previous_inputs[1], self.previous_inputs[2]])
-                    print('out from road !!!')
-                    # as inputs are already inversed if needed, we do not want the previous action to be inversed...
-                    self.previousInversed = False
+                    # On ne devrait jamais arrive la...
+                    print('out of road !!!')
+                    logging.info('out of road !!!')
                 
             # we normalize previous action
             normalizedAction = self._normalizePreviousAction()
@@ -144,33 +144,51 @@ class RnController:
                     # Modify RN with gradient according to reward
                     self.RN.replay(self.memory.sample(self.NB_ITEM_IN_TRAINING_BATCH))
             
-            print('inputs = ')
-            print(inputs)
             
             # RN compute action to take according to the new input
             action, isRandomChoice = self.RN.compute(inputs)
             #logging.debug("Action = "+str(action))
             # Store result as previous action choice
             self.previousAction = action
-            # Store input as previous input for next iteration
-            self.previous_inputs = inputs;
-            self.previousInversed = inversed
             
             # Get reward
-            # convert result to action. Simply return index of the most significant output.
-            print ('action = ')
-            print (action)
+            # convert result to action. Simply return index of the most significant output. 
             actionId = np.argmax(action)
             # but if inputs was inverted we also invert the output
             if inversed:
-                print ('inversion de l action...')
+                if outOfRoad:
+                    print('inversion de l action...')
+                    logging.info('inversion de l action...')
                 if actionId == 0:
                     actionId = 2
                 elif actionId == 2:
                     actionId = 0
-            print ('action choisie (-1,0,1) = '+str(actionId-1))
-            print ('------------------------------------------')
-            logging.info('choosen action id='+str(actionId))
+                    
+            if outOfRoad:
+                print('inputs = ')
+                print(inputs)
+                print('action = ')
+                print(action)
+                logging.info('inputPrecedent = ')
+                logging.info(self.previous_inputs)
+                logging.info('inversed='+str(inversed))
+                logging.info('previousInversed='+str(self.previousInversed))
+                logging.info('inputs = ')
+                logging.info(inputs)
+                logging.info('action = ')
+                logging.info(action)
+                randomChoiceStr = ''
+                if isRandomChoice:
+                    randomChoiceStr = '*'
+                logging.info('action choisie (-1,0,1) = '+str(actionId-1)+randomChoiceStr)
+                logging.info('------------------------------------------')
+                print ('action choisie (-1,0,1) = '+str(actionId-1))
+                print ('------------------------------------------')
+            logging.debug('choosen action id='+str(actionId))
+            
+            # Store input as previous input for next iteration
+            self.previous_inputs = inputs
+            self.previousInversed = inversed
 
             return actionId, isRandomChoice
 
